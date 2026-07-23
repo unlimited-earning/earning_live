@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EarnPro - User Dashboard</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       ========================================================================== */
+    :root {
+      --bg-dark: #070a12;
+      --card-bg: rgba(18, 26, 43, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --danger: #ef4444;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding-bottom: 90px; /* Spacing for bottom navigation */
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background Ambient Glows */
+    .ambient-glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(130px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .glow-1 { width: 350px; height: 350px; background: rgba(16, 185, 129, 0.12); top: -80px; left: -80px; }
+    .glow-2 { width: 400px; height: 400px; background: rgba(99, 102, 241, 0.1); bottom: 10%; right: -100px; }
+
+    /* ==========================================================================
+       2. FULL-SCREEN LOADING OVERLAY
+       ========================================================================== */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .loader-ring {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(16, 185, 129, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    .loader-text {
+      margin-top: 18px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ==========================================================================
+       3. HEADER & USER PROFILE
+       ========================================================================== */
+    .app-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px 16px 24px;
+    }
+
+    .header-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .profile-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .profile-avatar-wrap {
+      position: relative;
+    }
+
+    .profile-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .user-info .welcome-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .user-info .user-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .uid-badge {
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      color: var(--accent-gold);
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-balance-box {
+      text-align: right;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+    }
+
+    .balance-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .balance-amount {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .notif-btn {
+      position: relative;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .notif-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: var(--danger);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 800;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--bg-dark);
+    }
+
+    /* ==========================================================================
+       4. TOP QUICK ACTIONS GRID
+       ========================================================================== */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title svg {
+      stroke: var(--primary);
+    }
+
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .quick-actions-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+
+    .action-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px 12px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .action-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: var(--transition);
+    }
+
+    .action-card:hover .action-icon {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .action-card:hover .action-icon svg {
+      stroke: #ffffff;
+    }
+
+    .action-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    /* Sub Admin Lock Style */
+    .action-card.locked {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
+    .action-card.locked .action-icon {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .action-card.locked .action-icon svg {
+      stroke: var(--danger);
+    }
+
+    .lock-badge {
+      font-size: 0.65rem;
+      color: var(--danger);
+      font-weight: 700;
+      background: rgba(239, 68, 68, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: -4px;
+    }
+
+    /* ==========================================================================
+       5. HOME INFORMATION DASHBOARD CARDS
+       ========================================================================== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    @media (min-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .stat-subtext {
+      font-size: 0.7rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       6. REALTIME NOTICE SECTION
+       ========================================================================== */
+    .notices-wrapper {
+      margin-bottom: 28px;
+    }
+
+    .notice-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(18, 26, 43, 0.7) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(16px);
+      position: relative;
+    }
+
+    .notice-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-gold);
+      color: #000000;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .notice-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .notice-body {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .notice-time {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    /* ==========================================================================
+       7. AFFILIATE LEARNING POSTS CARDS
+       ========================================================================== */
+    .posts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    @media (min-width: 768px) {
+      .posts-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .post-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+    }
+
+    .post-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .post-banner {
+      height: 120px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px;
+    }
+
+    .post-banner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(18, 26, 43, 1) 0%, transparent 100%);
+    }
+
+    .post-tag {
+      position: relative;
+      z-index: 1;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+
+    .post-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .post-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .post-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 14px;
+      flex-grow: 1;
+    }
+
+    .btn-read-more {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-read-more:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    /* ==========================================================================
+       8. NOTIFICATION MODAL & ARTICLE MODAL
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 11000;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      background: rgba(22, 30, 49, 0.95);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       9. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 15, 26, 0.85);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 0 12px;
+      z-index: 999;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 600;
+      transition: var(--transition);
+      width: 20%;
+    }
+
+    .nav-item svg {
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+    }
+
+    .nav-item.active svg {
+      stroke: var(--primary);
+      filter: drop-shadow(0 0 8px var(--primary-glow));
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Glow Effects -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Securing Dashboard Session...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- HEADER SECTION -->
+    <header class="header-bar">
+      <div class="profile-section">
+        <div class="profile-avatar-wrap">
+          <img id="user-avatar" class="profile-avatar" src="https://ui-avatars.com/api/?name=User&background=10b981&color=fff" alt="User Profile">
+        </div>
+        <div class="user-info">
+          <span class="welcome-text">Welcome back,</span>
+          <h2 id="user-fullname" class="user-name">Loading...</h2>
+          <span id="user-uid-badge" class="uid-badge">UID: ------</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="header-balance-box">
+          <div class="balance-label">Balance</div>
+          <div id="header-balance-text" class="balance-amount">$0.00</div>
+        </div>
+        <button class="notif-btn" onclick="openNotificationsModal()" aria-label="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span id="notif-badge-count" class="notif-badge">1</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- TOP QUICK ACTIONS -->
+    <section>
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Quick Actions
+      </div>
+      
+      <div class="quick-actions-grid">
+        <!-- 1. Profile -->
+        <a href="profile.html" class="action-card">
+          <div class="action-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="action-title">Profile</span>
+        </a>
+
+        <!-- 2. Balance -->
+        <a href="balance.html" class="action-card">
+          <div class="action-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M6 12h.01M18 12h.01"/></svg>
+          </div>
+          <span class="action-title">Balance</span>
+        </a>
+
+        <!-- 3. Referral -->
+        <a href="referral.html" class="action-card">
+          <div class="action-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+          </div>
+          <span class="action-title">Referral</span>
+        </a>
+
+        <!-- 4. Future Work -->
+        <a href="future_work.html" class="action-card">
+          <div class="action-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <span class="action-title">Future Work</span>
+        </a>
+
+        <!-- 5. Leaderboard -->
+        <a href="leaderboard.html" class="action-card">
+          <div class="action-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          </div>
+          <span class="action-title">Leaderboard</span>
+        </a>
+
+        <!-- 6. Apply For Sub Admin -->
+        <a id="btn-sub-admin-apply" href="#" onclick="handleSubAdminClick(event)" class="action-card locked">
+          <div class="action-icon">
+            <svg id="icon-subadmin-lock" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <span class="action-title">Apply Sub Admin</span>
+          <span id="sub-admin-lock-status" class="lock-badge">Locked</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- HOME INFORMATION STATS -->
+    <section>
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Home Overview
+      </div>
+
+      <div class="stats-grid">
+        <!-- Current Balance -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Current Balance</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          </div>
+          <div id="stat-balance" class="stat-value">$0.00</div>
+          <div class="stat-subtext">Withdrawable Funds</div>
+        </div>
+
+        <!-- Today's Referral -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Today's Referral</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg></div>
+          </div>
+          <div id="stat-today-ref" class="stat-value">0</div>
+          <div class="stat-subtext" style="color:var(--accent-blue);">New Joining Today</div>
+        </div>
+
+        <!-- Active Referral -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Active Referral</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          </div>
+          <div id="stat-active-ref" class="stat-value">0</div>
+          <div id="active-ref-subtext" class="stat-subtext">Needs 3 to unlock Sub Admin</div>
+        </div>
+
+        <!-- Pending Referral -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Pending Referral</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          </div>
+          <div id="stat-pending-ref" class="stat-value">0</div>
+          <div class="stat-subtext" style="color:var(--accent-gold);">Awaiting Admin Activation</div>
+        </div>
+
+        <!-- Total Earnings -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Total Earnings</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></div>
+          </div>
+          <div id="stat-total-earnings" class="stat-value">$0.00</div>
+          <div class="stat-subtext" style="color:var(--accent-purple);">Lifetime Revenue</div>
+        </div>
+
+        <!-- Registration Date -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Joined Date</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          </div>
+          <div id="stat-reg-date" class="stat-value" style="font-size:1.05rem;">--/--/----</div>
+          <div class="stat-subtext" style="color:var(--text-muted);">Account Created</div>
+        </div>
+
+        <!-- Account Status -->
+        <div class="stat-card" style="grid-column: span 2;">
+          <div class="stat-header">
+            <span class="stat-label">Account Status</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          </div>
+          <div id="stat-account-status" class="stat-value" style="color:var(--primary);">ACTIVE</div>
+          <div class="stat-subtext">Verified & Approved Member</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REALTIME NOTICE SECTION -->
+    <section class="notices-wrapper">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Platform Announcements
+      </div>
+
+      <div id="notices-container">
+        <!-- Default Fallback Notice -->
+        <div class="notice-card">
+          <span class="notice-badge">Official Announcement</span>
+          <h3 class="notice-title">Welcome to EarnPro Network!</h3>
+          <p class="notice-body">Start inviting friends using your unique referral code. You need at least 3 active referrals to unlock the Sub Admin Application feature!</p>
+          <div class="notice-time">Just now</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AFFILIATE LEARNING POSTS -->
+    <section>
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Affiliate Knowledge Base
+      </div>
+
+      <div class="posts-grid">
+        <!-- Post 1 -->
+        <div class="post-card">
+          <div class="post-banner" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1557804506-669a67965ba0?w=500&auto=format&fit=crop&q=60');">
+            <span class="post-tag">Beginner Guide</span>
+          </div>
+          <div class="post-content">
+            <h3 class="post-title">What is Referral & How it Works</h3>
+            <p class="post-desc">Learn how our referral system tracks your team and generates passive daily commissions securely.</p>
+            <button class="btn-read-more" onclick="readPost('What is Referral?', 'When you register, you receive a 6-digit numeric referral UID. Share this UID with your friends. When they register using your code and their account gets activated by Admin, you earn direct commission bonuses.')">
+              Read Guide
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Post 2 -->
+        <div class="post-card">
+          <div class="post-banner" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=500&auto=format&fit=crop&q=60');">
+            <span class="post-tag">Growth Tips</span>
+          </div>
+          <div class="post-content">
+            <h3 class="post-title">How to Invite Friends Effectively</h3>
+            <p class="post-desc">Discover proven social media strategies to reach hundreds of active users on WhatsApp and Telegram.</p>
+            <button class="btn-read-more" onclick="readPost('How to Invite Friends', 'Share your referral code in WhatsApp groups, Telegram earning channels, and social media posts explaining how EarnPro helps members build recurring income.')">
+              Read Guide
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Post 3 -->
+        <div class="post-card">
+          <div class="post-banner" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=500&auto=format&fit=crop&q=60');">
+            <span class="post-tag">Rules & Terms</span>
+          </div>
+          <div class="post-content">
+            <h3 class="post-title">Platform Rules & Sub Admin Roles</h3>
+            <p class="post-desc">Understand safety guidelines, strict anti-fraud policies, and requirements to become a Sub Admin.</p>
+            <button class="btn-read-more" onclick="readPost('Platform Rules', 'Self-referrals or creating multiple dummy accounts from the same device is strictly prohibited and leads to immediate account ban. Complete 3 genuine active referrals to apply for Sub Admin status.')">
+              Read Guide
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /app-container -->
+
+  <!-- NOTIFICATION & ARTICLE MODAL -->
+  <div id="app-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modal-title-text" class="modal-title">Notifications</h3>
+        <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modal-body-text" style="font-size:0.9rem; color:var(--text-muted); line-height:1.6;">
+        No new notifications.
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav">
+    <a href="home.html" class="nav-item active">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </a>
+
+    <a href="balance.html" class="nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+      <span>Balance</span>
+    </a>
+
+    <a href="referral.html" class="nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+      <span>Referral</span>
+    </a>
+
+    <a href="leaderboard.html" class="nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      <span>Leaderboard</span>
+    </a>
+
+    <a href="profile.html" class="nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT AUTHENTICATION & REALTIME DATABASE LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    let currentUserData = null;
+    let activeReferralCount = 0;
+
+    // ==========================================================================
+    // 2. SECURITY GUARD & AUTHENTICATION CHECK
+    // ==========================================================================
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        // User not logged in -> Redirect to Login Page
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const uid = user.uid;
+
+      // Realtime Listener for User Profile & Account Status
+      database.ref('users/' + uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Security Check: Status must be active
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => {
+            window.location.href = 'index.html';
+          });
+          return;
+        }
+
+        currentUserData = data;
+        updateUIWithUserData(data);
+        hideLoader();
+      }, (error) => {
+        console.error("Firebase Security Error:", error);
+        window.location.href = 'index.html';
+      });
+
+      // Initialize Realtime Notices Listener
+      initRealtimeNotices();
+    });
+
+    // ==========================================================================
+    // 3. UI DATA BINDING & REALTIME COUNTERS
+    // ==========================================================================
+    function updateUIWithUserData(data) {
+      // Header Info
+      document.getElementById('user-fullname').textContent = data.name || 'Valued User';
+      document.getElementById('user-uid-badge').textContent = `UID: ${data.uid || data.referralCode || '------'}`;
+      
+      const balanceVal = (data.balance || 0).toFixed(2);
+      document.getElementById('header-balance-text').textContent = `$${balanceVal}`;
+      document.getElementById('stat-balance').textContent = `$${balanceVal}`;
+
+      // Avatar
+      const avatarUrl = data.photoUrl || data.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'User')}&background=10b981&color=fff`;
+      document.getElementById('user-avatar').src = avatarUrl;
+
+      // Referral Stats
+      document.getElementById('stat-today-ref').textContent = data.todayReferral || 0;
+      document.getElementById('stat-pending-ref').textContent = data.pendingReferral || 0;
+      
+      activeReferralCount = data.activeReferral || 0;
+      document.getElementById('stat-active-ref').textContent = activeReferralCount;
+
+      // Total Earnings & Reg Date
+      document.getElementById('stat-total-earnings').textContent = `$${(data.totalEarnings || 0).toFixed(2)}`;
+      
+      if (data.createdAt) {
+        const dateObj = new Date(data.createdAt);
+        document.getElementById('stat-reg-date').textContent = dateObj.toLocaleDateString();
+      }
+
+      // Account Status Badge
+      document.getElementById('stat-account-status').textContent = (data.accountStatus || 'ACTIVE').toUpperCase();
+
+      // Sub Admin Apply Button Locking Logic
+      updateSubAdminLockState();
+    }
+
+    // ==========================================================================
+    // 4. SUB ADMIN LOCK / UNLOCK SYSTEM (>= 3 Referrals Rule)
+    // ==========================================================================
+    function updateSubAdminLockState() {
+      const btn = document.getElementById('btn-sub-admin-apply');
+      const badge = document.getElementById('sub-admin-lock-status');
+      const lockIcon = document.getElementById('icon-subadmin-lock');
+      const subtext = document.getElementById('active-ref-subtext');
+
+      if (activeReferralCount >= 3) {
+        btn.classList.remove('locked');
+        badge.textContent = "Unlocked";
+        badge.style.background = "rgba(16, 185, 129, 0.2)";
+        badge.style.color = "var(--primary)";
+        subtext.textContent = "Unlocked Sub Admin Application!";
+        subtext.style.color = "var(--primary)";
+        lockIcon.innerHTML = `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`;
+      } else {
+        btn.classList.add('locked');
+        badge.textContent = "Locked";
+        badge.style.background = "rgba(239, 68, 68, 0.15)";
+        badge.style.color = "var(--danger)";
+        subtext.textContent = `Needs ${3 - activeReferralCount} more referral(s) to unlock`;
+        subtext.style.color = "var(--danger)";
+        lockIcon.innerHTML = `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`;
+      }
+    }
+
+    function handleSubAdminClick(e) {
+      if (activeReferralCount < 3) {
+        e.preventDefault();
+        alert("Complete at least 3 Active Referrals to unlock the Sub Admin Application.");
+      } else {
+        window.location.href = "sub_admin_apply.html";
+      }
+    }
+
+    // ==========================================================================
+    // 5. REALTIME NOTICE SYSTEM
+    // ==========================================================================
+    function initRealtimeNotices() {
+      const noticeRef = database.ref('notices').limitToLast(10);
+      
+      noticeRef.on('value', (snapshot) => {
+        const noticesContainer = document.getElementById('notices-container');
+        const data = snapshot.val();
+
+        if (!data) return; // Keep default html notice if empty
+
+        noticesContainer.innerHTML = '';
+        const noticeList = [];
+
+        snapshot.forEach((child) => {
+          noticeList.unshift({ id: child.key, ...child.val() }); // Newest First
+        });
+
+        noticeList.forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'notice-card';
+          card.innerHTML = `
+            <span class="notice-badge">${item.badge || 'Announcement'}</span>
+            <h3 class="notice-title">${escapeHTML(item.title || 'Notice')}</h3>
+            <p class="notice-body">${escapeHTML(item.message || '')}</p>
+            <div class="notice-time">${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recently'}</div>
+          `;
+          noticesContainer.appendChild(card);
+        });
+      });
+    }
+
+    // ==========================================================================
+    // 6. MODAL & READ MORE POST SYSTEM
+    // ==========================================================================
+    function openNotificationsModal() {
+      document.getElementById('modal-title-text').textContent = "Notifications";
+      document.getElementById('modal-body-text').innerHTML = `
+        <div style="padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:8px;">
+          <strong style="color:var(--primary);">Account Active</strong>
+          <p style="font-size:0.8rem; margin-top:4px;">Your account is fully approved by Main Admin. Start earning!</p>
+        </div>
+      `;
+      document.getElementById('app-modal').classList.add('active');
+    }
+
+    function readPost(title, content) {
+      document.getElementById('modal-title-text').textContent = title;
+      document.getElementById('modal-body-text').textContent = content;
+      document.getElementById('app-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('app-modal').classList.remove('active');
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
