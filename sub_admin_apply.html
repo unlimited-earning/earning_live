@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - Sub Admin Application</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & MOBILE-FIRST SYSTEM
+       ========================================================================== */
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --input-bg: rgba(10, 15, 26, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Mobile Metrics */
+      --page-pad: 14px;
+      --card-gap: 12px;
+      --section-gap: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: var(--page-pad);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glow */
+    .bg-glow {
+      position: fixed;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.08);
+      filter: blur(90px);
+      top: -40px;
+      right: -40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Toast Container */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--accent-gold); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(139, 92, 246, 0.15);
+      border-top-color: var(--accent-purple);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Section Header */
+    .section-head {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .section-head svg {
+      stroke: var(--accent-purple);
+    }
+
+    /* ==========================================================================
+       2. HEADER BANNER
+       ========================================================================== */
+    .header-banner-card {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      margin-bottom: var(--section-gap);
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .header-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.15);
+      padding: 3px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       3. ELIGIBILITY LOCK & USER AUTO-LOAD SUMMARY
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .alert-box-warning {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .user-autoload-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      background: rgba(10, 15, 26, 0.5);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 16px;
+    }
+
+    .auto-field-lbl {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .auto-field-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ==========================================================================
+       4. CATEGORY SELECTION CARDS
+       ========================================================================== */
+    .category-radio-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .category-radio-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .category-radio-card.selected {
+      border-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.12);
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+    }
+
+    .category-radio-card.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .cat-info-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cat-icon-box {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cat-title-txt {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .cat-sub-txt {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .status-tag-sm {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .status-tag-sm.available { background: rgba(16, 185, 129, 0.15); color: var(--primary); }
+    .status-tag-sm.unavailable { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+    /* ==========================================================================
+       5. APPLICATION TEXTAREA & CHAR COUNTER
+       ========================================================================== */
+    .essay-wrapper {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .essay-textarea {
+      width: 100%;
+      height: 140px;
+      padding: 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 12px;
+      outline: none;
+      resize: none;
+      transition: var(--transition);
+      line-height: 1.4;
+    }
+
+    .essay-textarea:focus {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    .char-counter-lbl {
+      text-align: right;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .btn-submit-purple {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--accent-purple) 0%, #7c3aed 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+      transition: var(--transition);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-submit-purple:disabled {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      border: 1px solid var(--card-border);
+    }
+
+    /* ==========================================================================
+       6. APPLICATION STATUS & CURRENT POSITION CARD
+       ========================================================================== */
+    .status-card-block {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .status-row-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+    }
+
+    .status-row-item:last-child {
+      border-bottom: none;
+    }
+
+    .badge-status-app {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .badge-status-app.pending { background: rgba(245, 158, 11, 0.15); color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-status-app.approved { background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-status-app.rejected { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* ==========================================================================
+       7. CONFIRMATION MODAL
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 11000;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-card {
+      background: rgba(22, 30, 49, 0.98);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    /* ==========================================================================
+       8. RULES & POLICY CARD
+       ========================================================================== */
+    .rule-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 15, 26, 0.4);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .rule-key { color: var(--text-muted); font-weight: 600; }
+    .rule-val { font-weight: 700; color: var(--text-main); }
+
+    /* ==========================================================================
+       9. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: var(--text-muted);
+      width: 20%;
+      height: 100%;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-tab.active {
+      color: var(--primary);
+    }
+
+    .nav-tab.active svg {
+      stroke: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light Glow -->
+  <div class="bg-glow"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Checking Leadership Eligibility...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- HEADER BANNER -->
+    <div class="header-banner-card">
+      <span class="header-tag">Leadership Program</span>
+      <h1 class="header-title">Sub Admin Application</h1>
+      <p class="header-subtitle">Become an official team leader and manage platform operations</p>
+    </div>
+
+    <!-- ELIGIBILITY & APPLICANT AUTO-LOAD SUMMARY -->
+    <div class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Applicant Profile (Auto-Loaded)
+      </div>
+
+      <!-- Referral Lock Warning -->
+      <div id="ref-lock-warning" class="alert-box-warning" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>You need at least 3 Active Referrals before applying.</span>
+      </div>
+
+      <div class="user-autoload-grid">
+        <div>
+          <div class="auto-field-lbl">Name</div>
+          <div id="auto-fullname" class="auto-field-val">Loading...</div>
+        </div>
+        <div>
+          <div class="auto-field-lbl">Numeric UID</div>
+          <div id="auto-uid" class="auto-field-val" style="color:var(--accent-gold);">------</div>
+        </div>
+        <div>
+          <div class="auto-field-lbl">WhatsApp</div>
+          <div id="auto-whatsapp" class="auto-field-val">------</div>
+        </div>
+        <div>
+          <div class="auto-field-lbl">Active Referrals</div>
+          <div id="auto-active-ref" class="auto-field-val" style="color:var(--primary);">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENT SUB ADMIN POSITION (IF APPROVED ALREADY) -->
+    <div id="current-position-block" class="card-block" style="display:none;">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Current Sub Admin Role
+      </div>
+
+      <div class="status-card-block" style="background:rgba(16, 185, 129, 0.1); border-color:var(--primary);">
+        <div class="status-row-item">
+          <span style="color:var(--text-muted);">Current Position:</span>
+          <span id="current-role-title" style="font-weight:800; color:var(--primary);">WhatsApp Admin</span>
+        </div>
+        <div class="status-row-item">
+          <span style="color:var(--text-muted);">Role Status:</span>
+          <span class="badge-status-app approved">ACTIVE LEADERSHIP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPLICATION STATUS (IF PENDING / REJECTED) -->
+    <div id="app-status-block" class="card-block" style="display:none;">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Latest Application Status
+      </div>
+
+      <div class="status-card-block">
+        <div class="status-row-item">
+          <span style="color:var(--text-muted);">Selected Category:</span>
+          <span id="app-status-cat" style="font-weight:700;">WhatsApp Admin</span>
+        </div>
+        <div class="status-row-item">
+          <span style="color:var(--text-muted);">Application Status:</span>
+          <span id="app-status-badge" class="badge-status-app pending">PENDING</span>
+        </div>
+        <div class="status-row-item">
+          <span style="color:var(--text-muted);">Apply Date:</span>
+          <span id="app-status-date">Recent</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPLICATION FORM BLOCK -->
+    <div class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="form-section-title">Select Leadership Category</span>
+      </div>
+
+      <!-- CATEGORY SELECTION CARDS -->
+      <div class="category-radio-grid">
+        <!-- 1. WhatsApp Admin -->
+        <div id="cat-card-whatsapp" class="category-radio-card selected" onclick="selectCategory('WhatsApp Admin', this)">
+          <div class="cat-info-left">
+            <div class="cat-icon-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+            <div>
+              <div class="cat-title-txt">WhatsApp Admin</div>
+              <div class="cat-sub-txt">Manage direct member activations</div>
+            </div>
+          </div>
+          <span id="tag-whatsapp" class="status-tag-sm available">Available</span>
+        </div>
+
+        <!-- 2. Team Leader -->
+        <div id="cat-card-team" class="category-radio-card" onclick="selectCategory('Team Leader', this)">
+          <div class="cat-info-left">
+            <div class="cat-icon-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div>
+              <div class="cat-title-txt">Team Leader</div>
+              <div class="cat-sub-txt">Supervise sub-teams & growth</div>
+            </div>
+          </div>
+          <span id="tag-team" class="status-tag-sm available">Available</span>
+        </div>
+
+        <!-- 3. Class Leader -->
+        <div id="cat-card-class" class="category-radio-card" onclick="selectCategory('Class Leader', this)">
+          <div class="cat-info-left">
+            <div class="cat-icon-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <div>
+              <div class="cat-title-txt">Class Leader</div>
+              <div class="cat-sub-txt">Conduct member training classes</div>
+            </div>
+          </div>
+          <span id="tag-class" class="status-tag-sm available">Available</span>
+        </div>
+      </div>
+
+      <!-- ESSAY QUESTION TEXTAREA -->
+      <div class="essay-wrapper">
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">
+          Application Cover Letter (Min 100, Max 2000 chars)
+        </label>
+        <textarea id="essay-text-input" class="essay-textarea" placeholder="Explain why you should be selected as a Sub Admin, your communication skills, and how you will guide new members..." oninput="updateCharCount()"></textarea>
+        <div id="char-counter" class="char-counter-lbl">0 / 2000 characters</div>
+      </div>
+
+      <button id="btn-submit-application" class="btn-submit-purple" onclick="openConfirmationModal()">
+        Submit Sub Admin Application
+      </button>
+    </div>
+
+    <!-- REVIEW PROCESS INFORMATION -->
+    <div class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Application Review Process
+      </div>
+
+      <div style="font-size:11px; color:var(--text-muted); line-height:1.5;">
+        Within <strong>24 hours</strong> of submitting your application, Main Admin or an authorized representative will contact you via WhatsApp for a brief interview. Once approved, your Sub Admin access will be activated immediately!
+      </div>
+    </div>
+
+    <!-- RULES CARD -->
+    <div class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Leadership Terms & Policy
+      </div>
+
+      <div class="rule-item">
+        <span class="rule-key">Minimum Referral Requirement</span>
+        <span class="rule-val" style="color:var(--primary);">3 Active Referrals</span>
+      </div>
+
+      <div class="rule-item">
+        <span class="rule-key">Review Window</span>
+        <span class="rule-val">Within 24 Hours</span>
+      </div>
+
+      <div class="rule-item">
+        <span class="rule-key">Rejection Cooldown</span>
+        <span class="rule-val" style="color:var(--danger);">48 Hours</span>
+      </div>
+
+      <div class="rule-item">
+        <span class="rule-key">Position Lock Period</span>
+        <span class="rule-val">14 Days After Approval</span>
+      </div>
+    </div>
+
+  </div> <!-- /app-container -->
+
+  <!-- CONFIRMATION MODAL -->
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="font-size:14px; font-weight:800; color:var(--text-main); margin-bottom:8px;">Confirm Application</h3>
+      <p style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">
+        Are you sure you want to submit your application for <strong id="confirm-cat-name" style="color:var(--accent-purple);">WhatsApp Admin</strong>?
+      </p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-submit-purple" style="flex:1;" onclick="submitApplicationPayload()">Confirm & Submit</button>
+        <button style="background:rgba(255,255,255,0.05); border:1px solid var(--card-border); color:white; padding:10px; border-radius:var(--radius-md); font-weight:700; flex:1;" onclick="closeModal('confirm-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav-fixed">
+    <a href="home.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">Home</span>
+    </a>
+
+    <a href="balance.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+      <span class="nav-label">Balance</span>
+    </a>
+
+    <a href="referral.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+      <span class="nav-label">Referral</span>
+    </a>
+
+    <a href="leaderboard.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      <span class="nav-label">Leader</span>
+    </a>
+
+    <a href="profile.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT LOGIC & REALTIME DATABASE INTEGRATION -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    let currentUser = null;
+    let currentUserData = null;
+    let selectedCategory = 'WhatsApp Admin';
+    let isEligibleByReferral = false;
+    let existingApplication = null;
+
+    // Category Status State
+    const categoryAvailability = {
+      'WhatsApp Admin': true,
+      'Team Leader': true,
+      'Class Leader': true
+    };
+
+    // ==========================================================================
+    // 2. SECURITY GUARD & REALTIME LISTENERS
+    // ==========================================================================
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentUser = user;
+
+      // Realtime Current User Data
+      database.ref('users/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => window.location.href = 'index.html');
+          return;
+        }
+
+        currentUserData = data;
+        bindUserDataSummary(data);
+        hideLoader();
+      });
+
+      // Realtime Category Availability Settings
+      database.ref('settings/subAdminCategories').on('value', (snapshot) => {
+        const settings = snapshot.val();
+        if (settings) {
+          Object.assign(categoryAvailability, settings);
+          updateCategoryUI();
+        }
+      });
+
+      // Realtime User Sub Admin Application Status
+      database.ref('sub_admin_applications/' + user.uid).on('value', (snapshot) => {
+        existingApplication = snapshot.val();
+        evaluateApplicationRules();
+      });
+    });
+
+    // ==========================================================================
+    // 3. UI DATA BINDING & RULE EVALUATION
+    // ==========================================================================
+    function bindUserDataSummary(data) {
+      document.getElementById('auto-fullname').textContent = data.name || 'User';
+      document.getElementById('auto-uid').textContent = data.uid || data.referralCode || '------';
+      document.getElementById('auto-whatsapp').textContent = data.whatsapp || '------';
+
+      const activeRef = data.activeReferral || 0;
+      document.getElementById('auto-active-ref').textContent = activeRef;
+
+      // Eligibility Rule: Minimum 3 Active Referrals
+      const lockWarning = document.getElementById('ref-lock-warning');
+      const submitBtn = document.getElementById('btn-submit-application');
+
+      if (activeRef < 3) {
+        isEligibleByReferral = false;
+        lockWarning.style.display = 'flex';
+        submitBtn.disabled = true;
+      } else {
+        isEligibleByReferral = true;
+        lockWarning.style.display = 'none';
+        submitBtn.disabled = false;
+      }
+
+      evaluateApplicationRules();
+    }
+
+    function evaluateApplicationRules() {
+      const currentPosBlock = document.getElementById('current-position-block');
+      const statusBlock = document.getElementById('app-status-block');
+      const submitBtn = document.getElementById('btn-submit-application');
+
+      if (currentUserData && currentUserData.isSubAdmin) {
+        currentPosBlock.style.display = 'block';
+        document.getElementById('current-role-title').textContent = currentUserData.subAdminRole || 'Sub Admin';
+        document.getElementById('form-section-title').textContent = "Apply For Position Update";
+
+        // Position Lock Rule: 14 Days after approval
+        if (currentUserData.roleApprovedAt) {
+          const daysPassed = (Date.now() - currentUserData.roleApprovedAt) / (1000 * 60 * 60 * 24);
+          if (daysPassed < 14) {
+            const daysRemaining = Math.ceil(14 - daysPassed);
+            showToast(`Position locked for ${daysRemaining} day(s) after approval.`, "warning");
+            submitBtn.disabled = true;
+            return;
+          }
+        }
+      } else {
+        currentPosBlock.style.display = 'none';
+      }
+
+      if (existingApplication) {
+        statusBlock.style.display = 'block';
+        document.getElementById('app-status-cat').textContent = existingApplication.category;
+
+        const badge = document.getElementById('app-status-badge');
+        badge.textContent = existingApplication.status.toUpperCase();
+        badge.className = `badge-status-app ${existingApplication.status.toLowerCase()}`;
+
+        document.getElementById('app-status-date').textContent = existingApplication.applyTime ? new Date(existingApplication.applyTime).toLocaleDateString() : 'Recent';
+
+        if (existingApplication.status === 'Pending') {
+          submitBtn.disabled = true;
+          showToast("You have a Pending application under review.", "warning");
+          return;
+        }
+
+        // Rejection Cooldown Rule: 48 Hours
+        if (existingApplication.status === 'Rejected' && existingApplication.reviewTime) {
+          const hoursPassed = (Date.now() - existingApplication.reviewTime) / (1000 * 60 * 60);
+          if (hoursPassed < 48) {
+            const hoursRemaining = Math.ceil(48 - hoursPassed);
+            submitBtn.disabled = true;
+            showToast(`Rejection cooldown active. Wait ${hoursRemaining} hour(s) to re-apply.`, "warning");
+            return;
+          }
+        }
+      } else {
+        statusBlock.style.display = 'none';
+      }
+
+      if (isEligibleByReferral) {
+        submitBtn.disabled = false;
+      }
+    }
+
+    // ==========================================================================
+    // 4. CATEGORY SELECTION & AVAILABILITY ENGINE
+    // ==========================================================================
+    function updateCategoryUI() {
+      updateCategoryCard('cat-card-whatsapp', 'tag-whatsapp', 'WhatsApp Admin');
+      updateCategoryCard('cat-card-team', 'tag-team', 'Team Leader');
+      updateCategoryCard('cat-card-class', 'tag-class', 'Class Leader');
+    }
+
+    function updateCategoryCard(cardId, tagId, catName) {
+      const card = document.getElementById(cardId);
+      const tag = document.getElementById(tagId);
+      const isAvailable = categoryAvailability[catName] !== false;
+
+      if (isAvailable) {
+        card.classList.remove('disabled');
+        tag.textContent = "Available";
+        tag.className = "status-tag-sm available";
+      } else {
+        card.classList.add('disabled');
+        card.classList.remove('selected');
+        tag.textContent = "Unavailable";
+        tag.className = "status-tag-sm unavailable";
+      }
+    }
+
+    function selectCategory(categoryName, element) {
+      if (categoryAvailability[categoryName] === false) {
+        showToast("This category is currently unavailable.", "warning");
+        return;
+      }
+
+      selectedCategory = categoryName;
+      document.querySelectorAll('.category-radio-card').forEach(c => c.classList.remove('selected'));
+      element.classList.add('selected');
+    }
+
+    function updateCharCount() {
+      const txt = document.getElementById('essay-text-input').value;
+      document.getElementById('char-counter').textContent = `${txt.length} / 2000 characters`;
+    }
+
+    // ==========================================================================
+    // 5. APPLICATION SUBMISSION HANDLER
+    // ==========================================================================
+    function openConfirmationModal() {
+      if (!isEligibleByReferral) {
+        showToast("You need at least 3 Active Referrals to apply.", "error");
+        return;
+      }
+
+      const essayText = document.getElementById('essay-text-input').value.trim();
+
+      if (essayText.length < 100) {
+        showToast("Cover letter must be at least 100 characters.", "error");
+        return;
+      }
+
+      if (essayText.length > 2000) {
+        showToast("Cover letter cannot exceed 2000 characters.", "error");
+        return;
+      }
+
+      document.getElementById('confirm-cat-name').textContent = selectedCategory;
+      document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    async function submitApplicationPayload() {
+      if (!currentUser || !currentUserData) return;
+
+      const essayText = document.getElementById('essay-text-input').value.trim();
+      const appId = database.ref('all_sub_admin_applications').push().key;
+      const now = Date.now();
+
+      const payload = {
+        appId: appId,
+        authUid: currentUser.uid,
+        uid: currentUserData.uid || currentUserData.referralCode || 'N/A',
+        userName: currentUserData.name || 'User',
+        whatsapp: currentUserData.whatsapp || 'N/A',
+        email: currentUserData.email || currentUser.email || 'N/A',
+        gender: currentUserData.gender || 'N/A',
+        activeReferrals: currentUserData.activeReferral || 0,
+        category: selectedCategory,
+        essayText: essayText,
+        status: "Pending",
+        applyTime: now
+      };
+
+      const updates = {};
+      updates[`sub_admin_applications/${currentUser.uid}`] = payload;
+      updates[`all_sub_admin_applications/${appId}`] = payload;
+
+      // Add Notification
+      const notifKey = database.ref(`notifications/${currentUser.uid}`).push().key;
+      updates[`notifications/${currentUser.uid}/${notifKey}`] = {
+        title: "Sub Admin Application Submitted",
+        message: `Your application for ${selectedCategory} is under review. Admin will contact you on WhatsApp within 24 hours.`,
+        timestamp: now
+      };
+
+      try {
+        await database.ref().update(updates);
+        closeModal('confirm-modal');
+        document.getElementById('essay-text-input').value = '';
+        updateCharCount();
+        showToast("Application submitted successfully!", "success");
+      } catch (err) {
+        showToast("Error submitting application: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 6. HELPER FUNCTIONS
+    // ==========================================================================
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+  </script>
+</body>
+</html>
