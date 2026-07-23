@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - WhatsApp Admin Portal</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & MOBILE-FIRST SYSTEM
+       ========================================================================== */
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --input-bg: rgba(10, 15, 26, 0.65);
+      
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Mobile Metrics */
+      --page-pad: 14px;
+      --card-gap: 12px;
+      --section-gap: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: var(--page-pad);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glow */
+    .bg-glow {
+      position: fixed;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: rgba(37, 211, 102, 0.08); /* WhatsApp Green Glow */
+      filter: blur(90px);
+      top: -40px;
+      right: -40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Toast Container */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(16, 185, 129, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Section Header */
+    .section-head {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .section-head svg {
+      stroke: var(--primary);
+    }
+
+    /* ==========================================================================
+       2. WHATSAPP ADMIN HEADER CARD
+       ========================================================================== */
+    .admin-hero-card {
+      background: linear-gradient(135deg, rgba(37, 211, 102, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(37, 211, 102, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .profile-top-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .admin-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #25D366;
+      box-shadow: 0 0 15px rgba(37, 211, 102, 0.3);
+      flex-shrink: 0;
+    }
+
+    .admin-title-box {
+      min-width: 0;
+    }
+
+    .admin-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .wa-badge-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: #25D366;
+      background: rgba(37, 211, 102, 0.15);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .weekly-bal-box {
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bal-lbl-sm {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .bal-val-lg {
+      font-size: 18px;
+      font-weight: 800;
+      color: #25D366;
+    }
+
+    /* ==========================================================================
+       3. TOP STATISTICS GRID
+       ========================================================================== */
+    .stats-3col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .stat-mini-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius-md);
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .stat-lbl {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       4. ASSIGNED USER CARDS & ACCEPT SYSTEM
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .user-card-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .user-item-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .user-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .user-left-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .user-title-txt {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-sub-txt {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .btn-accept {
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+    }
+
+    .btn-accept:active {
+      transform: scale(0.96);
+    }
+
+    .btn-guided {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--accent-blue);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-guided.completed {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--primary);
+    }
+
+    .btn-chat-wa {
+      background: #25D366;
+      color: white;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .action-row-sm {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 8px;
+    }
+
+    /* ==========================================================================
+       5. PAYMENT & ACTIVATION WARNING CARD
+       ========================================================================== */
+    .notice-card-danger {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .notice-title-lbl {
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ==========================================================================
+       6. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: var(--text-muted);
+      width: 25%;
+      height: 100%;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-tab.active {
+      color: #25D366;
+    }
+
+    .nav-tab.active svg {
+      stroke: #25D366;
+    }
+
+    .empty-txt {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Background Glow -->
+  <div class="bg-glow"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading WhatsApp Admin Session...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- ADMIN HERO HEADER -->
+    <div class="admin-hero-card">
+      <div class="profile-top-row">
+        <img id="admin-avatar" class="admin-avatar" src="https://ui-avatars.com/api/?name=Admin&background=25D366&color=fff" alt="Admin Avatar">
+        <div class="admin-title-box">
+          <div id="admin-name-txt" class="admin-name">Loading Admin...</div>
+          <span class="wa-badge-tag">WhatsApp Admin</span>
+        </div>
+      </div>
+
+      <div class="weekly-bal-box">
+        <div>
+          <div class="bal-lbl-sm">Weekly Balance</div>
+          <div id="weekly-balance-val" class="bal-val-lg">৳ 0.00</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="bal-lbl-sm">Auto Transfer</div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Every 7 Days</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOP STATISTICS GRID -->
+    <div class="stats-3col">
+      <div class="stat-mini-card">
+        <div class="stat-lbl">My Assigned</div>
+        <div id="stat-my-assigned" class="stat-val" style="color:var(--accent-blue);">0</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Completed</div>
+        <div id="stat-completed" class="stat-val" style="color:var(--primary);">0</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Weekly Earnings</div>
+        <div id="stat-weekly-earn" class="stat-val" style="color:#25D366;">৳ 0</div>
+      </div>
+    </div>
+
+    <!-- PAYMENT & ACTIVATION RULES NOTICE CARD -->
+    <div class="notice-card-danger">
+      <div class="notice-title-lbl">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Important Activation Rule
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+        When an assigned user completes payment, contact <strong>Main Admin</strong> using official channels. You cannot manually activate accounts. Activation is strictly managed by Main Admin.
+      </div>
+    </div>
+
+    <!-- AVAILABLE UNASSIGNED PENDING USERS FEED -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        Available Pending Registrations
+      </div>
+
+      <div id="unassigned-users-list" class="user-card-stack">
+        <div class="empty-txt">No unassigned pending users available.</div>
+      </div>
+    </section>
+
+    <!-- MY ASSIGNED USERS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        My Assigned Users
+      </div>
+
+      <div id="my-assigned-users-list" class="user-card-stack">
+        <div class="empty-txt">You haven't accepted any users yet.</div>
+      </div>
+    </section>
+
+  </div> <!-- /app-container -->
+
+  <!-- FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav-fixed">
+    <a href="sub_admin_whatsapp_home.html" class="nav-tab active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span class="nav-label">Dashboard</span>
+    </a>
+
+    <a href="home.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">User Home</span>
+    </a>
+
+    <a href="profile.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT REALTIME WHATSAPP ADMIN LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    let currentUser = null;
+    let currentUserData = null;
+
+    // ==========================================================================
+    // 2. SECURITY GUARD & ROLE CHECK
+    // ==========================================================================
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentUser = user;
+
+      // Check Account & Role Status
+      database.ref('users/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => window.location.href = 'index.html');
+          return;
+        }
+
+        // ROLE CHECK: MUST BE WhatsApp Admin
+        const role = (data.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+        if (!data.isSubAdmin || (role !== 'whatsapp_admin' && data.subAdminRole !== 'WhatsApp Admin')) {
+          alert("Access Denied: You are not authorized as a WhatsApp Admin.");
+          window.location.href = 'home.html';
+          return;
+        }
+
+        currentUserData = data;
+        bindAdminHeader(data);
+        checkWeeklyAutoTransfer(user.uid, data);
+        initRealtimeUserListeners();
+        hideLoader();
+      });
+    });
+
+    // ==========================================================================
+    // 3. UI DATA BINDING & HEADER
+    // ==========================================================================
+    function bindAdminHeader(data) {
+      document.getElementById('admin-name-txt').textContent = data.name || 'Admin User';
+      const avatar = data.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'Admin')}&background=25D366&color=fff`;
+      document.getElementById('admin-avatar').src = avatar;
+
+      const weeklyBal = data.weeklyBalance || 0;
+      document.getElementById('weekly-balance-val').textContent = `৳ ${weeklyBal.toFixed(2)}`;
+      document.getElementById('stat-weekly-earn').textContent = `৳ ${weeklyBal.toFixed(2)}`;
+    }
+
+    // ==========================================================================
+    // 4. REALTIME USER FEED & ACCEPTANCE ENGINE
+    // ==========================================================================
+    function initRealtimeUserListeners() {
+      database.ref('users').on('value', (snapshot) => {
+        const allUsers = snapshot.val() || {};
+
+        const unassignedList = [];
+        const myAssignedList = [];
+        let completedCount = 0;
+
+        Object.keys(allUsers).forEach(key => {
+          const u = allUsers[key];
+          u.authUid = key;
+
+          // Feed 1: Unassigned Pending Users (acceptedBy is null)
+          if (u.accountStatus === 'pending' && !u.acceptedBy) {
+            unassignedList.push(u);
+          }
+
+          // Feed 2: My Accepted Users
+          if (u.acceptedBy === currentUser.uid) {
+            myAssignedList.push(u);
+
+            if (u.accountStatus === 'active') {
+              completedCount++;
+            }
+          }
+        });
+
+        document.getElementById('stat-my-assigned').textContent = myAssignedList.length;
+        document.getElementById('stat-completed').textContent = completedCount;
+
+        renderUnassignedFeed(unassignedList);
+        renderMyAssignedFeed(myAssignedList);
+      });
+    }
+
+    function renderUnassignedFeed(list) {
+      const container = document.getElementById('unassigned-users-list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-txt">No unassigned pending users available.</div>`;
+        return;
+      }
+
+      list.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'user-item-card';
+
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
+        const regDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Recent';
+
+        div.innerHTML = `
+          <div class="user-card-header">
+            <div class="user-left-info">
+              <img class="user-avatar" src="${avatar}" alt="Avatar">
+              <div style="min-width:0;">
+                <div class="user-title-txt">${escapeHTML(u.name || 'User')}</div>
+                <div class="user-sub-txt">UID: ${u.uid || '------'} | ${regDate}</div>
+              </div>
+            </div>
+            <button class="btn-accept" onclick="acceptUserAssignment('${u.authUid}')">
+              Accept
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderMyAssignedFeed(list) {
+      const container = document.getElementById('my-assigned-users-list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-txt">You haven't accepted any users yet.</div>`;
+        return;
+      }
+
+      list.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'user-item-card';
+
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
+        const waNum = (u.whatsapp || '').replace(/[^0-9]/g, '');
+        const isGuided = u.guidedByAdmin === true;
+
+        div.innerHTML = `
+          <div class="user-card-header">
+            <div class="user-left-info">
+              <img class="user-avatar" src="${avatar}" alt="Avatar">
+              <div style="min-width:0;">
+                <div class="user-title-txt">${escapeHTML(u.name || 'User')}</div>
+                <div class="user-sub-txt">${escapeHTML(u.whatsapp || 'No WA')}</div>
+              </div>
+            </div>
+            <span style="font-size:10px; font-weight:800; color:${u.accountStatus === 'active' ? 'var(--primary)' : 'var(--accent-gold)'};">
+              ${(u.accountStatus || 'PENDING').toUpperCase()}
+            </span>
+          </div>
+
+          <div class="action-row-sm">
+            <a href="https://wa.me/${waNum}" target="_blank" class="btn-chat-wa">
+              Chat WhatsApp
+            </a>
+            <button class="btn-guided ${isGuided ? 'completed' : ''}" onclick="toggleGuideStatus('${u.authUid}', ${isGuided})">
+              ${isGuided ? '✓ Guided' : 'Mark Guided'}
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // ==========================================================================
+    // 5. ATOMIC USER ACCEPT & LOCKING TRANSACTION
+    // ==========================================================================
+    async function acceptUserAssignment(targetAuthUid) {
+      if (!currentUser) return;
+
+      const userRef = database.ref('users/' + targetAuthUid);
+
+      try {
+        const snapshot = await userRef.once('value');
+        const userData = snapshot.val();
+
+        if (userData.acceptedBy) {
+          showToast("This user was already accepted by another Admin.", "error");
+          return;
+        }
+
+        const now = Date.now();
+        await userRef.update({
+          acceptedBy: currentUser.uid,
+          acceptedAt: now
+        });
+
+        showToast("User accepted! Added to My Assigned Users.", "success");
+      } catch (err) {
+        showToast("Error accepting user: " + err.message, "error");
+      }
+    }
+
+    async function toggleGuideStatus(targetAuthUid, currentGuidedState) {
+      try {
+        await database.ref(`users/${targetAuthUid}/guidedByAdmin`).set(!currentGuidedState);
+        showToast("Guide status updated.", "success");
+      } catch (err) {
+        showToast("Error: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 6. AUTO WEEKLY BALANCE TRANSFER (EVERY 7 DAYS)
+    // ==========================================================================
+    async function checkWeeklyAutoTransfer(authUid, adminData) {
+      const weeklyBal = adminData.weeklyBalance || 0;
+      if (weeklyBal <= 0) return;
+
+      const lastTransfer = adminData.lastWeeklyTransferTime || 0;
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+      if (now - lastTransfer >= sevenDaysMs) {
+        const updates = {};
+        const newMainBal = (adminData.balance || 0) + weeklyBal;
+
+        updates[`users/${authUid}/balance`] = newMainBal;
+        updates[`users/${authUid}/weeklyBalance`] = 0;
+        updates[`users/${authUid}/lastWeeklyTransferTime`] = now;
+
+        const notifKey = database.ref(`notifications/${authUid}`).push().key;
+        updates[`notifications/${authUid}/${notifKey}`] = {
+          title: "Weekly Balance Transferred!",
+          message: `৳${weeklyBal} from Weekly Balance transferred to your main wallet balance.`,
+          timestamp: now
+        };
+
+        try {
+          await database.ref().update(updates);
+          showToast(`Weekly Transfer Complete: ৳${weeklyBal} added to main balance!`, "success");
+        } catch (err) {
+          console.error("Weekly transfer error:", err);
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 7. HELPER FUNCTIONS
+    // ==========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
