@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - Class Leader Portal</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & MOBILE-FIRST SYSTEM
+       ========================================================================== */
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --input-bg: rgba(10, 15, 26, 0.65);
+      
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Mobile Metrics */
+      --page-pad: 14px;
+      --card-gap: 12px;
+      --section-gap: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: var(--page-pad);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glow */
+    .bg-glow {
+      position: fixed;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.08); /* Purple Glow */
+      filter: blur(90px);
+      top: -40px;
+      right: -40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Toast Container */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--accent-gold); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(139, 92, 246, 0.15);
+      border-top-color: var(--accent-purple);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Section Header */
+    .section-head {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .section-head svg {
+      stroke: var(--accent-purple);
+    }
+
+    /* ==========================================================================
+       2. CLASS LEADER HEADER CARD
+       ========================================================================== */
+    .cl-hero-card {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .cl-profile-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .cl-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--accent-purple);
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+      flex-shrink: 0;
+    }
+
+    .cl-badge-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .weekly-bal-box {
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* ==========================================================================
+       3. TOP STATISTICS GRID
+       ========================================================================== */
+    .stats-2col {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .stat-mini-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .stat-lbl {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       4. TEAM LEADER ASSIGNMENT & MY TEAM LEADER
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .tl-card-item {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tl-left-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .tl-avatar-sm {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .btn-accept-purple {
+      background: linear-gradient(135deg, var(--accent-purple) 0%, #7c3aed 100%);
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+    }
+
+    /* ==========================================================================
+       5. CLASS SCHEDULE & MAIN CONDUCTED CLASS
+       ========================================================================== */
+    .schedule-card-item {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .schedule-card-item.main-class {
+      border-color: var(--accent-purple);
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(10, 15, 26, 0.6) 100%);
+    }
+
+    .sched-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .sched-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .time-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      background: rgba(245, 158, 11, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .conductor-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-purple);
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    .btn-meet-purple {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-purple);
+      color: white;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 800;
+      text-decoration: none;
+      margin-top: 8px;
+    }
+
+    /* ==========================================================================
+       6. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: var(--text-muted);
+      width: 25%;
+      height: 100%;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-tab.active {
+      color: var(--accent-purple);
+    }
+
+    .nav-tab.active svg {
+      stroke: var(--accent-purple);
+    }
+
+    .empty-txt {
+      text-align: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Background Glow -->
+  <div class="bg-glow"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading Class Leader Session...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- CLASS LEADER HERO HEADER -->
+    <div class="cl-hero-card">
+      <div class="cl-profile-row">
+        <img id="cl-avatar" class="cl-avatar" src="https://ui-avatars.com/api/?name=Leader&background=8b5cf6&color=fff" alt="Avatar">
+        <div style="min-width:0;">
+          <div id="cl-name-txt" style="font-size:16px; font-weight:800; color:var(--text-main);">Loading Class Leader...</div>
+          <span class="cl-badge-tag">Class Leader</span>
+        </div>
+      </div>
+
+      <div class="weekly-bal-box">
+        <div>
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Weekly Balance</div>
+          <div id="weekly-balance-val" style="font-size:18px; font-weight:800; color:var(--accent-purple);">৳ 0.00</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Assigned TL</div>
+          <div id="tl-assigned-status-lbl" style="font-size:11px; font-weight:800; color:var(--accent-gold);">None</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOP STATISTICS GRID -->
+    <div class="stats-2col">
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Today's Main Class</div>
+        <div class="stat-val" style="color:var(--accent-purple);">05:00 PM</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Class Platform</div>
+        <div class="stat-val" style="color:var(--primary); font-size:13px;">Google Meet</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Weekly Earnings</div>
+        <div id="stat-weekly-earn" class="stat-val" style="color:var(--accent-purple);">৳ 0</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">5 PM Class Attendance</div>
+        <div id="stat-evening-att" class="stat-val" style="color:var(--accent-gold);">0</div>
+      </div>
+    </div>
+
+    <!-- MY ASSIGNED TEAM LEADER CARD -->
+    <div id="my-team-leader-block" class="card-block" style="display:none;">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        My Assigned Team Leader
+      </div>
+
+      <div class="tl-card-item" style="background:rgba(59, 130, 246, 0.1); border-color:var(--accent-blue);">
+        <div class="tl-left-info">
+          <img id="my-tl-avatar" class="tl-avatar-sm" src="" alt="TL Avatar">
+          <div style="min-width:0;">
+            <div id="my-tl-name" style="font-weight:700; font-size:13px;">Name</div>
+            <div id="my-tl-whatsapp" style="font-size:10px; color:var(--text-muted);">WhatsApp: ------</div>
+          </div>
+        </div>
+        <span style="font-size:10px; font-weight:800; color:var(--accent-blue); background:rgba(59,130,246,0.15); padding:2px 6px; border-radius:4px;">MANAGED</span>
+      </div>
+    </div>
+
+    <!-- AVAILABLE TEAM LEADERS FOR ASSIGNMENT (IF NONE ASSIGNED YET) -->
+    <section id="available-tl-block" class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        Available Team Leaders
+      </div>
+
+      <div id="available-tl-list" style="display:flex; flex-direction:column; gap:10px;">
+        <div class="empty-txt">No unassigned Team Leaders available.</div>
+      </div>
+    </section>
+
+    <!-- THREE-TIER CLASS SCHEDULE SECTION -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Class Schedule & Responsibilities
+      </div>
+
+      <!-- 1. Morning Support Class -->
+      <div class="schedule-card-item">
+        <div class="sched-top">
+          <div class="sched-title">Morning Class (Pending Users)</div>
+          <span class="time-badge">10:00 AM</span>
+        </div>
+        <div class="conductor-tag">Conducted by: Team Leader (Class Leader Support)</div>
+      </div>
+
+      <!-- 2. Main Evening Class (Conducted by Class Leader) -->
+      <div class="schedule-card-item main-class">
+        <div class="sched-top">
+          <div class="sched-title">Main Class (Training & Guidance)</div>
+          <span class="time-badge" style="background:rgba(139, 92, 246, 0.2); color:var(--accent-purple);">05:00 PM</span>
+        </div>
+        <div class="conductor-tag" style="color:var(--primary); font-weight:800;">Conducted by: Class Leader (YOU)</div>
+        <div>
+          <a href="https://meet.google.com/" target="_blank" class="btn-meet-purple">
+            Host 5 PM Google Meet
+          </a>
+        </div>
+      </div>
+
+      <!-- 3. Night Support Class -->
+      <div class="schedule-card-item" style="margin-top:10px;">
+        <div class="sched-top">
+          <div class="sched-title">Night Class (Active Users)</div>
+          <span class="time-badge">09:00 PM</span>
+        </div>
+        <div class="conductor-tag">Conducted by: Team Leader (Class Leader Support)</div>
+      </div>
+    </section>
+
+    <!-- EARNINGS POLICY NOTICE -->
+    <div style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.25); border-radius:var(--radius-lg); padding:14px; margin-bottom:var(--section-gap);">
+      <div style="font-weight:800; font-size:12px; color:var(--primary); margin-bottom:4px;">
+        Commission Reward Policy
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+        Whenever your assigned Team Leader receives <strong>30 Taka</strong> for an active account, <strong>20 Taka</strong> is automatically added to your Class Leader Weekly Balance!
+      </div>
+    </div>
+
+  </div> <!-- /app-container -->
+
+  <!-- FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav-fixed">
+    <a href="sub_admin_class_leader_home.html" class="nav-tab active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span class="nav-label">Dashboard</span>
+    </a>
+
+    <a href="home.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">User Home</span>
+    </a>
+
+    <a href="profile.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT REALTIME CLASS LEADER LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    let currentUser = null;
+    let myAssignedTLUid = null;
+
+    // ==========================================================================
+    // 2. SECURITY GUARD & ROLE CHECK
+    // ==========================================================================
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentUser = user;
+
+      // Check Role & Status
+      database.ref('users/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => window.location.href = 'index.html');
+          return;
+        }
+
+        // ROLE CHECK: MUST BE Class Leader
+        const role = (data.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+        if (!data.isSubAdmin || (role !== 'class_leader' && data.subAdminRole !== 'Class Leader')) {
+          alert("Access Denied: You are not authorized as a Class Leader.");
+          window.location.href = 'home.html';
+          return;
+        }
+
+        bindHeaderData(data);
+        myAssignedTLUid = data.assignedTeamLeader || null;
+        checkWeeklyAutoTransfer(user.uid, data);
+        initRealtimeTeamLeaderListeners();
+        hideLoader();
+      });
+    });
+
+    // ==========================================================================
+    // 3. UI DATA BINDING & HEADER
+    // ==========================================================================
+    function bindHeaderData(data) {
+      document.getElementById('cl-name-txt').textContent = data.name || 'Class Leader';
+      const avatar = data.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'Leader')}&background=8b5cf6&color=fff`;
+      document.getElementById('cl-avatar').src = avatar;
+
+      const weeklyBal = data.weeklyBalance || 0;
+      document.getElementById('weekly-balance-val').textContent = `৳ ${weeklyBal.toFixed(2)}`;
+      document.getElementById('stat-weekly-earn').textContent = `৳ ${weeklyBal.toFixed(2)}`;
+
+      document.getElementById('tl-assigned-status-lbl').textContent = data.assignedTeamLeader ? 'TL Assigned' : 'None';
+    }
+
+    // ==========================================================================
+    // 4. REALTIME TEAM LEADER ASSIGNMENT LISTENERS
+    // ==========================================================================
+    function initRealtimeTeamLeaderListeners() {
+      database.ref('users').on('value', (snapshot) => {
+        const allUsers = snapshot.val() || {};
+
+        const availableTLs = [];
+        let myTLData = null;
+
+        Object.keys(allUsers).forEach(key => {
+          const u = allUsers[key];
+          u.authUid = key;
+
+          const role = (u.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+          const isTL = u.isSubAdmin && (role === 'team_leader' || u.subAdminRole === 'Team Leader');
+
+          if (isTL) {
+            // Feed 1: Unassigned Team Leaders
+            if (!u.assignedClassLeader) {
+              availableTLs.push(u);
+            }
+
+            // Feed 2: My Assigned Team Leader
+            if (u.assignedClassLeader === currentUser.uid || key === myAssignedTLUid) {
+              myTLData = u;
+            }
+          }
+        });
+
+        renderMyTeamLeaderBlock(myTLData);
+        renderAvailableTLFeed(availableTLs);
+      });
+    }
+
+    function renderMyTeamLeaderBlock(tlData) {
+      const block = document.getElementById('my-team-leader-block');
+      const availBlock = document.getElementById('available-tl-block');
+
+      if (tlData) {
+        block.style.display = 'block';
+        availBlock.style.display = 'none';
+
+        const avatar = tlData.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(tlData.name || 'TL')}&background=3b82f6&color=fff`;
+        document.getElementById('my-tl-avatar').src = avatar;
+        document.getElementById('my-tl-name').textContent = tlData.name || 'Team Leader';
+        document.getElementById('my-tl-whatsapp').textContent = `WhatsApp: ${tlData.whatsapp || 'N/A'}`;
+      } else {
+        block.style.display = 'none';
+        availBlock.style.display = 'block';
+      }
+    }
+
+    function renderAvailableTLFeed(list) {
+      const container = document.getElementById('available-tl-list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-txt">No unassigned Team Leaders available.</div>`;
+        return;
+      }
+
+      list.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'tl-card-item';
+
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'TL')}&background=3b82f6&color=fff`;
+
+        div.innerHTML = `
+          <div class="tl-left-info">
+            <img class="tl-avatar-sm" src="${avatar}" alt="Avatar">
+            <div style="min-width:0;">
+              <div style="font-weight:700; font-size:13px; color:var(--text-main);">${escapeHTML(u.name || 'TL')}</div>
+              <div style="font-size:10px; color:var(--text-muted);">UID: ${u.uid || '------'} | ${escapeHTML(u.whatsapp || 'No WA')}</div>
+            </div>
+          </div>
+          <button class="btn-accept-purple" onclick="acceptTeamLeader('${u.authUid}')">
+            Accept TL
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // ==========================================================================
+    // 5. ATOMIC ACCEPT TEAM LEADER TRANSACTION
+    // ==========================================================================
+    async function acceptTeamLeader(targetTlAuthUid) {
+      if (!currentUser) return;
+
+      if (myAssignedTLUid) {
+        showToast("You can only manage 1 Team Leader at a time.", "error");
+        return;
+      }
+
+      const tlRef = database.ref('users/' + targetTlAuthUid);
+
+      try {
+        const snapshot = await tlRef.once('value');
+        const tlData = snapshot.val();
+
+        if (tlData.assignedClassLeader) {
+          showToast("This Team Leader was already accepted by another Class Leader.", "error");
+          return;
+        }
+
+        const updates = {};
+        updates[`users/${targetTlAuthUid}/assignedClassLeader`] = currentUser.uid;
+        updates[`users/${currentUser.uid}/assignedTeamLeader`] = targetTlAuthUid;
+
+        await database.ref().update(updates);
+        showToast("Team Leader accepted! You now manage this Team Leader.", "success");
+      } catch (err) {
+        showToast("Error accepting Team Leader: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 6. AUTO WEEKLY BALANCE TRANSFER (EVERY 7 DAYS)
+    // ==========================================================================
+    async function checkWeeklyAutoTransfer(authUid, adminData) {
+      const weeklyBal = adminData.weeklyBalance || 0;
+      if (weeklyBal <= 0) return;
+
+      const lastTransfer = adminData.lastWeeklyTransferTime || 0;
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+      if (now - lastTransfer >= sevenDaysMs) {
+        const updates = {};
+        const newMainBal = (adminData.balance || 0) + weeklyBal;
+
+        updates[`users/${authUid}/balance`] = newMainBal;
+        updates[`users/${authUid}/weeklyBalance`] = 0;
+        updates[`users/${authUid}/lastWeeklyTransferTime`] = now;
+
+        const notifKey = database.ref(`notifications/${authUid}`).push().key;
+        updates[`notifications/${authUid}/${notifKey}`] = {
+          title: "Weekly Balance Transferred!",
+          message: `৳${weeklyBal} from Class Commission transferred to your main wallet balance.`,
+          timestamp: now
+        };
+
+        try {
+          await database.ref().update(updates);
+          showToast(`Weekly Transfer Complete: ৳${weeklyBal} added to main balance!`, "success");
+        } catch (err) {
+          console.error("Weekly transfer error:", err);
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 7. HELPER FUNCTIONS
+    // ==========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
