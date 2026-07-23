@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - Future Work & Training Center</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & MOBILE-FIRST SYSTEM
+       ========================================================================== */
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Mobile Metrics */
+      --page-pad: 14px;
+      --card-gap: 12px;
+      --section-gap: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: var(--page-pad);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glow */
+    .bg-glow {
+      position: fixed;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.08);
+      filter: blur(90px);
+      top: -40px;
+      right: -40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(16, 185, 129, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Section Header */
+    .section-head {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .section-head svg {
+      stroke: var(--primary);
+    }
+
+    /* ==========================================================================
+       2. HEADER BANNER
+       ========================================================================== */
+    .header-banner-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      margin-bottom: var(--section-gap);
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .header-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--primary);
+      background: rgba(16, 185, 129, 0.15);
+      padding: 3px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       3. WORK ROADMAP STEPS
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .roadmap-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    .roadmap-step-item {
+      display: flex;
+      gap: 12px;
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      position: relative;
+    }
+
+    .step-badge-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-weight: 800;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .step-content-text {
+      flex: 1;
+    }
+
+    .step-title-txt {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .step-desc-txt {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* ==========================================================================
+       4. TRAINING ARTICLES GRID
+       ========================================================================== */
+    .training-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .training-topic-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .training-topic-card:active {
+      transform: scale(0.97);
+      background: rgba(16, 185, 129, 0.1);
+      border-color: var(--primary);
+    }
+
+    .topic-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .topic-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       5. VIDEO TRAINING PLACEHOLDERS
+       ========================================================================== */
+    .video-card-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .video-card-item {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .video-thumb-placeholder {
+      height: 110px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .play-btn-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .play-btn-circle svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+      margin-left: 2px;
+    }
+
+    .video-info-box {
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .video-title-txt {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .video-duration-tag {
+      font-size: 10px;
+      color: var(--accent-gold);
+      font-weight: 700;
+      background: rgba(245, 158, 11, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* ==========================================================================
+       6. FAQ ACCORDION SECTION
+       ========================================================================== */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .faq-item {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .faq-question {
+      padding: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .faq-answer {
+      padding: 0 12px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: none;
+      line-height: 1.4;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 8px;
+    }
+
+    .faq-item.active .faq-answer {
+      display: block;
+    }
+
+    /* ==========================================================================
+       7. NOTICE & MOTIVATION & SUPPORT CARDS
+       ========================================================================== */
+    .notice-card-warning {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .notice-head-lbl {
+      color: var(--danger);
+      font-weight: 800;
+      font-size: 12px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .notice-list-bullet {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding-left: 16px;
+      line-height: 1.5;
+    }
+
+    .motivation-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(18, 26, 43, 0.75) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+      text-align: center;
+    }
+
+    .motivation-txt {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      line-height: 1.4;
+    }
+
+    .support-box {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      text-align: center;
+      margin-bottom: var(--section-gap);
+    }
+
+    .btn-support-wa {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #25D366;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 12px;
+      text-decoration: none;
+      margin-top: 8px;
+    }
+
+    /* Modal Style */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 11000;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-card {
+      background: rgba(22, 30, 49, 0.98);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    /* ==========================================================================
+       8. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: var(--text-muted);
+      width: 20%;
+      height: 100%;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-tab.active {
+      color: var(--primary);
+    }
+
+    .nav-tab.active svg {
+      stroke: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light Glow -->
+  <div class="bg-glow"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading Training Dashboard...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- HEADER BANNER -->
+    <div class="header-banner-card">
+      <span class="header-tag">Training Center</span>
+      <h1 class="header-title">Future Work & Learning</h1>
+      <p class="header-subtitle">Master team building and grow your daily affiliate earnings</p>
+    </div>
+
+    <!-- WORK ROADMAP STEPS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        6-Step Referral Roadmap
+      </div>
+
+      <div class="roadmap-timeline">
+        <!-- Step 1 -->
+        <div class="roadmap-step-item">
+          <div class="step-badge-num">1</div>
+          <div class="step-content-text">
+            <div class="step-title-txt">Find a New Prospect</div>
+            <div class="step-desc-txt">Reach out to interested friends on WhatsApp, Telegram, or social media.</div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="roadmap-step-item">
+          <div class="step-badge-num">2</div>
+          <div class="step-content-text">
+            <div class="step-title-txt">Collect Registration Info</div>
+            <div class="step-desc-txt">Gather their Full Name, Gender, WhatsApp Number, and Email Address.</div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="roadmap-step-item">
+          <div class="step-badge-num">3</div>
+          <div class="step-content-text">
+            <div class="step-title-txt">Register Account With Your Code</div>
+            <div class="step-desc-txt">Create their account using your 6-digit Referral UID code.</div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="roadmap-step-item">
+          <div class="step-badge-num">4</div>
+          <div class="step-content-text">
+            <div class="step-title-txt">Send Login Information</div>
+            <div class="step-desc-txt">Share their new login credentials securely with them.</div>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="roadmap-step-item">
+          <div class="step-badge-num">5</div>
+          <div class="step-content-text">
+            <div class="step-title-txt">Contact WhatsApp Admin</div>
+            <div class="step-desc-txt">Inform them that an Official Admin will contact them for activation.</div>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="roadmap-step-item">
+          <div class="step-badge-num">6</div>
+          <div class="step-content-text">
+            <div class="step-title-txt">Receive Referral Reward</div>
+            <div class="step-desc-txt">Once activated by Admin, 170 Taka is credited instantly to your balance!</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRAINING TOPICS GRID -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Affiliate Knowledge Base
+      </div>
+
+      <div class="training-grid">
+        <div class="training-topic-card" onclick="openArticleModal('How Referral Works', 'Our referral system matches your 6-digit numeric UID to every account registered through your invitation link or code. When account activation is approved by Admin, reward funds are transferred immediately.')">
+          <div class="topic-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg></div>
+          <div class="topic-title">How Referral Works</div>
+        </div>
+
+        <div class="training-topic-card" onclick="openArticleModal('Talking With New Users', 'Be polite, clear, and professional. Explain how account activation unlocks daily earnings and guide them through registration step by step.')">
+          <div class="topic-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="topic-title">Talking With Users</div>
+        </div>
+
+        <div class="training-topic-card" onclick="openArticleModal('Building Trust', 'Transparency is key. Show them official platform notices, minimum withdrawal terms (100 Taka), and payment proofs from experienced members.')">
+          <div class="topic-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="topic-title">Building Trust</div>
+        </div>
+
+        <div class="training-topic-card" onclick="openArticleModal('Growing Your Team', 'Create a dedicated WhatsApp or Telegram broadcast group for your invited members to post updates and share earning tips.')">
+          <div class="topic-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="topic-title">Growing Your Team</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIDEO TRAINING PLACEHOLDERS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Video Training Center
+      </div>
+
+      <div class="video-card-stack">
+        <div class="video-card-item">
+          <div class="video-thumb-placeholder" style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=60');">
+            <div class="play-btn-circle" onclick="alert('Video training module coming soon!')">
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+          <div class="video-info-box">
+            <span class="video-title-txt">Full Referral Mastery Tutorial</span>
+            <span class="video-duration-tag">08:45</span>
+          </div>
+        </div>
+
+        <div class="video-card-item">
+          <div class="video-thumb-placeholder" style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&auto=format&fit=crop&q=60');">
+            <div class="play-btn-circle" onclick="alert('Video training module coming soon!')">
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+          <div class="video-info-box">
+            <span class="video-title-txt">Withdrawal & Wallet Guide</span>
+            <span class="video-duration-tag">05:20</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Frequently Asked Questions
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item" onclick="toggleFAQ(this)">
+          <div class="faq-question">
+            <span>What is Form Fill Up?</span>
+            <span>+</span>
+          </div>
+          <div class="faq-answer">Form Fill Up refers to registering a new user using their authentic details and your 6-digit referral UID code.</div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFAQ(this)">
+          <div class="faq-question">
+            <span>When will I receive 170 Taka?</span>
+            <span>+</span>
+          </div>
+          <div class="faq-answer">You receive 170 Taka immediately after the Main Admin approves and activates the referred user's account.</div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFAQ(this)">
+          <div class="faq-question">
+            <span>How does Account Activation work?</span>
+            <span>+</span>
+          </div>
+          <div class="faq-answer">Users complete the 520 Taka activation fee payment. Admin verifies payment details and sets status to Active.</div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFAQ(this)">
+          <div class="faq-question">
+            <span>Minimum Withdraw & Interval?</span>
+            <span>+</span>
+          </div>
+          <div class="faq-answer">Minimum withdrawal is 100 Taka. Withdrawals are permitted once every 3 days (72 hours) with at least 1 Active Referral.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- IMPORTANT NOTICE CARD -->
+    <div class="notice-card-warning">
+      <div class="notice-head-lbl">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Important Rules & Anti-Fraud Notice
+      </div>
+      <ul class="notice-list-bullet">
+        <li>Never create fake or duplicate accounts on the same device.</li>
+        <li>Always provide real, working WhatsApp numbers and emails.</li>
+        <li>Do not spam or mislead new users.</li>
+        <li>Violating platform policies will result in account ban.</li>
+      </ul>
+    </div>
+
+    <!-- MOTIVATION CARD -->
+    <div class="motivation-card">
+      <div class="motivation-txt">
+        "The more active referrals you complete, the more daily passive income you earn. Stay active and grow your team today!"
+      </div>
+    </div>
+
+    <!-- SUPPORT BOX -->
+    <div class="support-box">
+      <div style="font-weight:800; font-size:13px; color:var(--text-main);">Need Further Guidance?</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Contact your designated WhatsApp Official Admin</div>
+      <a href="https://wa.me/" target="_blank" class="btn-support-wa">
+        Contact WhatsApp Admin
+      </a>
+    </div>
+
+  </div> <!-- /app-container -->
+
+  <!-- ARTICLE MODAL -->
+  <div id="article-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 id="article-modal-title" style="font-size:14px; font-weight:700;">Training Article</h3>
+        <button style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;" onclick="closeModal('article-modal')">&times;</button>
+      </div>
+      <div id="article-modal-body" style="font-size:12px; color:var(--text-muted); line-height:1.5; text-align:left;">
+        Article content...
+      </div>
+    </div>
+  </div>
+
+  <!-- FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav-fixed">
+    <a href="home.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">Home</span>
+    </a>
+
+    <a href="balance.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+      <span class="nav-label">Balance</span>
+    </a>
+
+    <a href="referral.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+      <span class="nav-label">Referral</span>
+    </a>
+
+    <a href="leaderboard.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      <span class="nav-label">Leader</span>
+    </a>
+
+    <a href="profile.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT REALTIME INTEGRATION -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    // ==========================================================================
+    // 2. SECURITY GUARD & REALTIME LISTENERS
+    // ==========================================================================
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      database.ref('users/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => window.location.href = 'index.html');
+          return;
+        }
+
+        hideLoader();
+      });
+    });
+
+    // ==========================================================================
+    // 3. UI INTERACTION HELPERS
+    // ==========================================================================
+    function toggleFAQ(element) {
+      element.classList.toggle('active');
+    }
+
+    function openArticleModal(title, text) {
+      document.getElementById('article-modal-title').textContent = title;
+      document.getElementById('article-modal-body').textContent = text;
+      document.getElementById('article-modal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+  </script>
+</body>
+</html>
