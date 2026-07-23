@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - Team Leader Portal</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & MOBILE-FIRST SYSTEM
+       ========================================================================== */
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --input-bg: rgba(10, 15, 26, 0.65);
+      
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Mobile Metrics */
+      --page-pad: 14px;
+      --card-gap: 12px;
+      --section-gap: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: var(--page-pad);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glow */
+    .bg-glow {
+      position: fixed;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.08); /* Blue Glow */
+      filter: blur(90px);
+      top: -40px;
+      right: -40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Toast Container */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--accent-gold); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(59, 130, 246, 0.15);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Section Header */
+    .section-head {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .section-head svg {
+      stroke: var(--accent-blue);
+    }
+
+    /* ==========================================================================
+       2. TEAM LEADER HEADER CARD
+       ========================================================================== */
+    .tl-hero-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .tl-profile-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .tl-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--accent-blue);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+      flex-shrink: 0;
+    }
+
+    .tl-badge-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .weekly-bal-box {
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .capacity-tag {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      background: rgba(245, 158, 11, 0.15);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    /* ==========================================================================
+       3. TOP STATISTICS GRID
+       ========================================================================== */
+    .stats-2col {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .stat-mini-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .stat-lbl {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       4. TEAM MANAGEMENT & ADMIN CARDS
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .user-card-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .member-item-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mem-left-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .mem-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .mem-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mem-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .btn-accept-blue {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    .btn-accept-blue:disabled {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-remove-red {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       5. CLASS MANAGEMENT CARDS
+       ========================================================================== */
+    .class-card-item {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .class-card-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .class-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .class-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .class-time-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      background: rgba(245, 158, 11, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .meet-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 8px;
+    }
+
+    /* ==========================================================================
+       6. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: var(--text-muted);
+      width: 25%;
+      height: 100%;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-tab.active {
+      color: var(--accent-blue);
+    }
+
+    .nav-tab.active svg {
+      stroke: var(--accent-blue);
+    }
+
+    .empty-txt {
+      text-align: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Background Glow -->
+  <div class="bg-glow"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading Team Dashboard...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- TEAM LEADER HERO HEADER -->
+    <div class="tl-hero-card">
+      <div class="tl-profile-row">
+        <img id="tl-avatar" class="tl-avatar" src="https://ui-avatars.com/api/?name=Leader&background=3b82f6&color=fff" alt="Avatar">
+        <div style="min-width:0;">
+          <div id="tl-name-txt" style="font-size:16px; font-weight:800; color:var(--text-main);">Loading Leader...</div>
+          <span class="tl-badge-tag">Team Leader</span>
+        </div>
+      </div>
+
+      <div class="weekly-bal-box">
+        <div>
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Weekly Balance</div>
+          <div id="weekly-balance-val" style="font-size:18px; font-weight:800; color:var(--primary);">৳ 0.00</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Capacity</div>
+          <span id="capacity-count-tag" class="capacity-tag">0 / 10 Admins</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOP STATISTICS GRID -->
+    <div class="stats-2col">
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Team Size</div>
+        <div id="stat-team-size" class="stat-val" style="color:var(--accent-blue);">0 / 10</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Team Activations</div>
+        <div id="stat-team-activations" class="stat-val" style="color:var(--primary);">0</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Weekly Earnings</div>
+        <div id="stat-weekly-earn" class="stat-val" style="color:var(--primary);">৳ 0</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Morning Attendance</div>
+        <div id="stat-morning-att" class="stat-val" style="color:var(--accent-gold);">0</div>
+      </div>
+    </div>
+
+    <!-- AVAILABLE UNASSIGNED WHATSAPP ADMINS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        Available WhatsApp Admins
+      </div>
+
+      <div id="available-admins-list" class="user-card-stack">
+        <div class="empty-txt">No unassigned WhatsApp Admins available.</div>
+      </div>
+    </section>
+
+    <!-- MY TEAM MEMBERS (ACCEPTED WHATSAPP ADMINS) -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        My Sub Admin Team
+      </div>
+
+      <div id="my-team-list" class="user-card-stack">
+        <div class="empty-txt">No WhatsApp Admins accepted yet.</div>
+      </div>
+    </section>
+
+    <!-- CLASS MANAGEMENT SECTION -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Today's Training Classes
+      </div>
+
+      <!-- Morning Class -->
+      <div class="class-card-item">
+        <div class="class-top">
+          <div class="class-title">Morning Class (Pending Users)</div>
+          <span class="class-time-tag">10:00 AM</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">Focus: Account Activation & Platform Rules</div>
+        <a id="link-morning-meet" href="https://meet.google.com/" target="_blank" class="meet-link-btn">
+          Join Morning Meet Class
+        </a>
+      </div>
+
+      <!-- Night Class -->
+      <div class="class-card-item" style="margin-top:10px;">
+        <div class="class-top">
+          <div class="class-title">Night Class (Active Users)</div>
+          <span class="class-time-tag" style="background:rgba(139, 92, 246, 0.15); color:var(--accent-purple);">09:00 PM</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">Focus: Team Building & Advanced Referral Tips</div>
+        <a id="link-night-meet" href="https://meet.google.com/" target="_blank" class="meet-link-btn" style="color:var(--accent-purple); border-color:rgba(139, 92, 246, 0.3);">
+          Join Night Meet Class
+        </a>
+      </div>
+    </section>
+
+    <!-- CLASS LEADER INFO CARD -->
+    <div id="class-leader-block" class="card-block" style="display:none;">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Assigned Class Leader
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(10,15,26,0.5); padding:10px; border-radius:8px;">
+        <div>
+          <div id="cl-name" style="font-weight:700; color:var(--text-main);">Leader Name</div>
+          <div id="cl-whatsapp" style="font-size:10px; color:var(--text-muted);">WhatsApp: ------</div>
+        </div>
+        <span style="font-size:10px; font-weight:800; color:var(--primary); background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px;">ACTIVE</span>
+      </div>
+    </div>
+
+  </div> <!-- /app-container -->
+
+  <!-- FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav-fixed">
+    <a href="sub_admin_team_leader_home.html" class="nav-tab active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span class="nav-label">Dashboard</span>
+    </a>
+
+    <a href="home.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">User Home</span>
+    </a>
+
+    <a href="profile.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT REALTIME TEAM LEADER LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    let currentUser = null;
+    let myTeamMembersCount = 0;
+
+    // ==========================================================================
+    // 2. SECURITY GUARD & ROLE CHECK
+    // ==========================================================================
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentUser = user;
+
+      // Realtime Listener for Current User Role
+      database.ref('users/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => window.location.href = 'index.html');
+          return;
+        }
+
+        // ROLE CHECK: MUST BE Team Leader
+        const role = (data.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+        if (!data.isSubAdmin || (role !== 'team_leader' && data.subAdminRole !== 'Team Leader')) {
+          alert("Access Denied: You are not authorized as a Team Leader.");
+          window.location.href = 'home.html';
+          return;
+        }
+
+        bindHeaderData(data);
+        checkWeeklyAutoTransfer(user.uid, data);
+        initRealtimeTeamListeners();
+        hideLoader();
+      });
+    });
+
+    // ==========================================================================
+    // 3. UI DATA BINDING & HEADER
+    // ==========================================================================
+    function bindHeaderData(data) {
+      document.getElementById('tl-name-txt').textContent = data.name || 'Team Leader';
+      const avatar = data.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'Leader')}&background=3b82f6&color=fff`;
+      document.getElementById('tl-avatar').src = avatar;
+
+      const weeklyBal = data.weeklyBalance || 0;
+      document.getElementById('weekly-balance-val').textContent = `৳ ${weeklyBal.toFixed(2)}`;
+      document.getElementById('stat-weekly-earn').textContent = `৳ ${weeklyBal.toFixed(2)}`;
+    }
+
+    // ==========================================================================
+    // 4. REALTIME TEAM & AVAILABLE WHATSAPP ADMINS LISTENERS
+    // ==========================================================================
+    function initRealtimeTeamListeners() {
+      database.ref('users').on('value', (snapshot) => {
+        const allUsers = snapshot.val() || {};
+
+        const availableWAAdmins = [];
+        const myTeamMembers = [];
+        let totalTeamActivations = 0;
+
+        Object.keys(allUsers).forEach(key => {
+          const u = allUsers[key];
+          u.authUid = key;
+
+          const role = (u.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+          const isWAAdmin = u.isSubAdmin && (role === 'whatsapp_admin' || u.subAdminRole === 'WhatsApp Admin');
+
+          if (isWAAdmin) {
+            // Feed 1: Unassigned WhatsApp Admins
+            if (!u.assignedTeamLeader) {
+              availableWAAdmins.push(u);
+            }
+
+            // Feed 2: My Accepted Team Members
+            if (u.assignedTeamLeader === currentUser.uid) {
+              myTeamMembers.push(u);
+              totalTeamActivations += (u.completedActivationsCount || 0);
+            }
+          }
+        });
+
+        myTeamMembersCount = myTeamMembers.length;
+
+        document.getElementById('capacity-count-tag').textContent = `${myTeamMembersCount} / 10 Admins`;
+        document.getElementById('stat-team-size').textContent = `${myTeamMembersCount} / 10`;
+        document.getElementById('stat-team-activations').textContent = totalTeamActivations;
+
+        renderAvailableAdminsFeed(availableWAAdmins);
+        renderMyTeamFeed(myTeamMembers);
+      });
+    }
+
+    function renderAvailableAdminsFeed(list) {
+      const container = document.getElementById('available-admins-list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-txt">No unassigned WhatsApp Admins available.</div>`;
+        return;
+      }
+
+      list.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'member-item-card';
+
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'Admin')}&background=25D366&color=fff`;
+        const isDisabled = myTeamMembersCount >= 10;
+
+        div.innerHTML = `
+          <div class="mem-left-info">
+            <img class="mem-avatar" src="${avatar}" alt="Avatar">
+            <div style="min-width:0;">
+              <div class="mem-name">${escapeHTML(u.name || 'WA Admin')}</div>
+              <div class="mem-sub">UID: ${u.uid || '------'} | ${escapeHTML(u.whatsapp || 'No WA')}</div>
+            </div>
+          </div>
+          <button class="btn-accept-blue" ${isDisabled ? 'disabled' : ''} onclick="acceptWhatsAppAdmin('${u.authUid}')">
+            ${isDisabled ? 'Team Full' : 'Accept Admin'}
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderMyTeamFeed(list) {
+      const container = document.getElementById('my-team-list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-txt">No WhatsApp Admins accepted yet.</div>`;
+        return;
+      }
+
+      list.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'member-item-card';
+
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'Admin')}&background=25D366&color=fff`;
+
+        div.innerHTML = `
+          <div class="mem-left-info">
+            <img class="mem-avatar" src="${avatar}" alt="Avatar">
+            <div style="min-width:0;">
+              <div class="mem-name">${escapeHTML(u.name || 'WA Admin')}</div>
+              <div class="mem-sub">Weekly Earn: ৳${u.weeklyBalance || 0}</div>
+            </div>
+          </div>
+          <button class="btn-remove-red" onclick="removeWhatsAppAdmin('${u.authUid}')">
+            Remove
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // ==========================================================================
+    // 5. ATOMIC ACCEPT & REMOVE TEAM TRANSACTIONS
+    // ==========================================================================
+    async function acceptWhatsAppAdmin(targetAuthUid) {
+      if (!currentUser) return;
+
+      if (myTeamMembersCount >= 10) {
+        showToast("Your team has reached the maximum capacity of 10 WhatsApp Admins.", "error");
+        return;
+      }
+
+      const userRef = database.ref('users/' + targetAuthUid);
+
+      try {
+        const snapshot = await userRef.once('value');
+        const userData = snapshot.val();
+
+        if (userData.assignedTeamLeader) {
+          showToast("This WhatsApp Admin was already assigned to another Team Leader.", "error");
+          return;
+        }
+
+        const now = Date.now();
+        await userRef.update({
+          assignedTeamLeader: currentUser.uid,
+          assignedToTeamAt: now
+        });
+
+        showToast("WhatsApp Admin accepted into your team!", "success");
+      } catch (err) {
+        showToast("Error accepting admin: " + err.message, "error");
+      }
+    }
+
+    async function removeWhatsAppAdmin(targetAuthUid) {
+      if (confirm("Are you sure you want to remove this WhatsApp Admin from your team?")) {
+        try {
+          await database.ref(`users/${targetAuthUid}/assignedTeamLeader`).set(null);
+          showToast("WhatsApp Admin removed from your team.", "success");
+        } catch (err) {
+          showToast("Error removing admin: " + err.message, "error");
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 6. AUTO WEEKLY BALANCE TRANSFER (EVERY 7 DAYS)
+    // ==========================================================================
+    async function checkWeeklyAutoTransfer(authUid, adminData) {
+      const weeklyBal = adminData.weeklyBalance || 0;
+      if (weeklyBal <= 0) return;
+
+      const lastTransfer = adminData.lastWeeklyTransferTime || 0;
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+      if (now - lastTransfer >= sevenDaysMs) {
+        const updates = {};
+        const newMainBal = (adminData.balance || 0) + weeklyBal;
+
+        updates[`users/${authUid}/balance`] = newMainBal;
+        updates[`users/${authUid}/weeklyBalance`] = 0;
+        updates[`users/${authUid}/lastWeeklyTransferTime`] = now;
+
+        const notifKey = database.ref(`notifications/${authUid}`).push().key;
+        updates[`notifications/${authUid}/${notifKey}`] = {
+          title: "Weekly Balance Transferred!",
+          message: `৳${weeklyBal} from Team Commission transferred to your main wallet balance.`,
+          timestamp: now
+        };
+
+        try {
+          await database.ref().update(updates);
+          showToast(`Weekly Transfer Complete: ৳${weeklyBal} added to main balance!`, "success");
+        } catch (err) {
+          console.error("Weekly transfer error:", err);
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 7. HELPER FUNCTIONS
+    // ==========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
