@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - Account Profile</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & MOBILE-FIRST SYSTEM
+       ========================================================================== */
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --input-bg: rgba(10, 15, 26, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Mobile Metrics */
+      --page-pad: 14px;
+      --card-gap: 14px;
+      --section-gap: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: var(--page-pad);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Glow Effects */
+    .bg-glow {
+      position: fixed;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.08);
+      filter: blur(90px);
+      top: -50px;
+      right: -50px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* ==========================================================================
+       2. TOAST NOTIFICATIONS & LOADING OVERLAY
+       ========================================================================== */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(16, 185, 129, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Section Titles */
+    .section-header {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .section-header svg {
+      stroke: var(--primary);
+    }
+
+    /* ==========================================================================
+       3. PROFILE HEADER CARD
+       ========================================================================== */
+    .profile-header-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      text-align: center;
+      margin-bottom: var(--section-gap);
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 12px;
+    }
+
+    .profile-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--primary);
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .camera-btn {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: var(--primary);
+      border: 2px solid var(--bg-dark);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .camera-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: #ffffff;
+    }
+
+    .profile-fullname {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .header-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .badge-item {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .badge-item.gold { color: var(--accent-gold); background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.25); }
+    .badge-item.green { color: var(--primary); background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.25); }
+
+    /* ==========================================================================
+       4. FORM CARDS & INPUT STYLING
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .input-box:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .input-box[readonly] {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .select-box {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .select-box option {
+      background: #0f172a;
+      color: white;
+    }
+
+    .btn-submit-primary {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px var(--primary-glow);
+      transition: var(--transition);
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-submit-primary:active {
+      transform: scale(0.98);
+    }
+
+    /* ==========================================================================
+       5. ACCOUNT STATISTICS GRID
+       ========================================================================== */
+    .stats-2col {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .stat-mini-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: var(--radius-md);
+    }
+
+    .stat-mini-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .stat-mini-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       6. TOGGLE SWITCHES (NOTIFICATION SETTINGS)
+       ========================================================================== */
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-info {
+      padding-right: 10px;
+    }
+
+    .setting-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .setting-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .3s;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* ==========================================================================
+       7. ABOUT PLATFORM INFO CARD
+       ========================================================================== */
+    .about-info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .about-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 15, 26, 0.4);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .about-key {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .about-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       8. LOGOUT BUTTON
+       ========================================================================== */
+    .btn-logout {
+      width: 100%;
+      padding: 12px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-md);
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn-logout:active {
+      background: var(--danger);
+      color: white;
+    }
+
+    /* ==========================================================================
+       9. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: var(--text-muted);
+      width: 20%;
+      height: 100%;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-tab.active {
+      color: var(--primary);
+    }
+
+    .nav-tab.active svg {
+      stroke: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Ambient Glow -->
+  <div class="bg-glow"></div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading Profile...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- PROFILE HEADER CARD -->
+    <div class="profile-header-card">
+      <div class="avatar-wrapper">
+        <img id="header-avatar" class="profile-img" src="https://ui-avatars.com/api/?name=User&background=10b981&color=fff" alt="Profile">
+        <label for="file-avatar-upload" class="camera-btn" title="Change Photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </label>
+        <input type="file" id="file-avatar-upload" accept="image/*" style="display:none;" onchange="handleImagePreview(event)">
+      </div>
+
+      <h2 id="header-fullname" class="profile-fullname">Loading...</h2>
+      
+      <div class="header-badges">
+        <span id="badge-uid" class="badge-item gold">UID: ------</span>
+        <span id="badge-refcode" class="badge-item">Ref: ------</span>
+        <span id="badge-balance" class="badge-item green">$0.00</span>
+        <span id="badge-status" class="badge-item green">ACTIVE</span>
+      </div>
+    </div>
+
+    <!-- EDIT PROFILE INFORMATION -->
+    <section class="card-block">
+      <div class="section-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Personal Information
+      </div>
+
+      <form id="form-edit-profile" onsubmit="handleProfileUpdate(event)">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="edit-fullname" class="input-box" placeholder="Your Full Name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select id="edit-gender" class="select-box" required>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">WhatsApp Number (Read Only)</label>
+          <input type="text" id="read-whatsapp" class="input-box" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address (Read Only)</label>
+          <input type="email" id="read-email" class="input-box" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Numeric UID (Read Only)</label>
+          <input type="text" id="read-uid" class="input-box" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Referral Code (Read Only)</label>
+          <input type="text" id="read-referral" class="input-box" readonly>
+        </div>
+
+        <button type="submit" class="btn-submit-primary" id="btn-save-profile">
+          Save Profile Changes
+        </button>
+      </form>
+    </section>
+
+    <!-- ACCOUNT STATISTICS CARD -->
+    <section class="card-block">
+      <div class="section-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Account Statistics
+      </div>
+
+      <div class="stats-2col">
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Current Balance</div>
+          <div id="stat-balance" class="stat-mini-val" style="color:var(--primary);">$0.00</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Total Earnings</div>
+          <div id="stat-total-earnings" class="stat-mini-val" style="color:var(--accent-purple);">$0.00</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Active Referrals</div>
+          <div id="stat-active-ref" class="stat-mini-val" style="color:var(--accent-blue);">0</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Pending Referrals</div>
+          <div id="stat-pending-ref" class="stat-mini-val" style="color:var(--accent-gold);">0</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Total Referrals</div>
+          <div id="stat-total-ref" class="stat-mini-val">0</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Sub Admin Role</div>
+          <div id="stat-subadmin-role" class="stat-mini-val" style="font-size:12px; color:var(--text-muted);">None</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHANGE PASSWORD CARD -->
+    <section class="card-block">
+      <div class="section-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Change Password
+      </div>
+
+      <form id="form-change-password" onsubmit="handleChangePassword(event)">
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="pwd-current" class="input-box" placeholder="••••••••" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" id="pwd-new" class="input-box" placeholder="Min 6 characters" minlength="6" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" id="pwd-confirm" class="input-box" placeholder="Repeat new password" required>
+        </div>
+
+        <button type="submit" class="btn-submit-primary" id="btn-save-pwd">
+          Update Security Password
+        </button>
+      </form>
+    </section>
+
+    <!-- NOTIFICATION PREFERENCES -->
+    <section class="card-block">
+      <div class="section-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notification Settings
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title">Referral Alerts</div>
+          <div class="setting-desc">Get notified when a referral joins or activates</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="notif-referrals" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title">System Announcements</div>
+          <div class="setting-desc">Important updates and admin notices</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="notif-system" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title">Promotions & News</div>
+          <div class="setting-desc">Special reward events and earning tips</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="notif-promo" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <button type="button" class="btn-submit-primary" onclick="saveNotificationSettings()">
+        Save Preferences
+      </button>
+    </section>
+
+    <!-- ABOUT PLATFORM CARD -->
+    <section class="card-block">
+      <div class="section-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        About EarnPro Network
+      </div>
+
+      <div class="about-info-list">
+        <div class="about-item">
+          <span class="about-key">Platform Name</span>
+          <span class="about-val">EarnPro Earning Platform</span>
+        </div>
+
+        <div class="about-item">
+          <span class="about-key">Account Activation Fee</span>
+          <span class="about-val" style="color:var(--primary);">520 Taka</span>
+        </div>
+
+        <div class="about-item">
+          <span class="about-key">Referral Bonus Reward</span>
+          <span class="about-val" style="color:var(--accent-gold);">170 Taka</span>
+        </div>
+
+        <div class="about-item">
+          <span class="about-key">Minimum Withdrawal</span>
+          <span class="about-val">100 Taka</span>
+        </div>
+
+        <div class="about-item">
+          <span class="about-key">Withdrawal Schedule</span>
+          <span class="about-val">Every 3 Days</span>
+        </div>
+
+        <div class="about-item">
+          <span class="about-key">App Version</span>
+          <span class="about-val">v2.4.0 Pro</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOGOUT BUTTON -->
+    <button class="btn-logout" onclick="handleLogout()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out of Account
+    </button>
+
+  </div> <!-- /app-container -->
+
+  <!-- FIXED BOTTOM NAVIGATION BAR (PROFILE ACTIVE) -->
+  <nav class="bottom-nav-fixed">
+    <a href="home.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">Home</span>
+    </a>
+
+    <a href="balance.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+      <span class="nav-label">Balance</span>
+    </a>
+
+    <a href="referral.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+      <span class="nav-label">Referral</span>
+    </a>
+
+    <a href="leaderboard.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      <span class="nav-label">Leader</span>
+    </a>
+
+    <a href="profile.html" class="nav-tab active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT & FIREBASE REALTIME INTEGRATION -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    let currentUserAuth = null;
+    let pendingPhotoBase64 = null;
+
+    // ==========================================================================
+    // 2. SECURITY GUARD & AUTHENTICATION LISTENERS
+    // ==========================================================================
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentUserAuth = user;
+
+      // Realtime User Data Listener
+      database.ref('users/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => window.location.href = 'index.html');
+          return;
+        }
+
+        bindProfileData(data);
+        hideLoader();
+      }, (error) => {
+        showToast("Error loading profile data: " + error.message, "error");
+        hideLoader();
+      });
+    });
+
+    // ==========================================================================
+    // 3. UI DATA BINDING
+    // ==========================================================================
+    function bindProfileData(data) {
+      // Header Card
+      document.getElementById('header-fullname').textContent = data.name || 'User Name';
+      document.getElementById('badge-uid').textContent = `UID: ${data.uid || '------'}`;
+      document.getElementById('badge-refcode').textContent = `Ref: ${data.referralCode || '------'}`;
+      document.getElementById('badge-balance').textContent = `$${(data.balance || 0).toFixed(2)}`;
+      document.getElementById('badge-status').textContent = (data.accountStatus || 'ACTIVE').toUpperCase();
+
+      // Avatar
+      const avatarUrl = pendingPhotoBase64 || data.photoUrl || data.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'User')}&background=10b981&color=fff`;
+      document.getElementById('header-avatar').src = avatarUrl;
+
+      // Form Inputs
+      document.getElementById('edit-fullname').value = data.name || '';
+      document.getElementById('edit-gender').value = data.gender || 'Male';
+
+      // Read Only Inputs
+      document.getElementById('read-whatsapp').value = data.whatsapp || 'Not provided';
+      document.getElementById('read-email').value = data.email || currentUserAuth.email || 'N/A';
+      document.getElementById('read-uid').value = data.uid || 'N/A';
+      document.getElementById('read-referral').value = data.referralCode || 'N/A';
+
+      // Statistics
+      document.getElementById('stat-balance').textContent = `$${(data.balance || 0).toFixed(2)}`;
+      document.getElementById('stat-total-earnings').textContent = `$${(data.totalEarnings || 0).toFixed(2)}`;
+      
+      const activeRef = data.activeReferral || 0;
+      const pendingRef = data.pendingReferral || 0;
+      document.getElementById('stat-active-ref').textContent = activeRef;
+      document.getElementById('stat-pending-ref').textContent = pendingRef;
+      document.getElementById('stat-total-ref').textContent = activeRef + pendingRef;
+
+      document.getElementById('stat-subadmin-role').textContent = data.isSubAdmin ? 'Active Sub Admin' : 'Member';
+
+      // Notification Settings
+      if (data.notificationSettings) {
+        document.getElementById('notif-referrals').checked = data.notificationSettings.referrals !== false;
+        document.getElementById('notif-system').checked = data.notificationSettings.system !== false;
+        document.getElementById('notif-promo').checked = data.notificationSettings.promo !== false;
+      }
+    }
+
+    // ==========================================================================
+    // 4. IMAGE UPLOAD PREVIEW
+    // ==========================================================================
+    function handleImagePreview(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) { // 2MB Limit
+        showToast("Image size must be less than 2MB", "error");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        pendingPhotoBase64 = e.target.result;
+        document.getElementById('header-avatar').src = pendingPhotoBase64;
+        showToast("Photo preview ready. Click 'Save Profile Changes'", "success");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ==========================================================================
+    // 5. PROFILE UPDATE HANDLER
+    // ==========================================================================
+    async function handleProfileUpdate(event) {
+      event.preventDefault();
+      if (!currentUserAuth) return;
+
+      const newName = document.getElementById('edit-fullname').value.trim();
+      const newGender = document.getElementById('edit-gender').value;
+
+      if (!newName) {
+        showToast("Full name cannot be empty.", "error");
+        return;
+      }
+
+      const updates = {
+        name: newName,
+        gender: newGender
+      };
+
+      if (pendingPhotoBase64) {
+        updates.photoUrl = pendingPhotoBase64;
+      }
+
+      try {
+        await database.ref('users/' + currentUserAuth.uid).update(updates);
+        pendingPhotoBase64 = null;
+        showToast("Profile updated successfully!", "success");
+      } catch (err) {
+        showToast("Failed to update profile: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 6. CHANGE PASSWORD HANDLER
+    // ==========================================================================
+    async function handleChangePassword(event) {
+      event.preventDefault();
+      if (!currentUserAuth) return;
+
+      const currentPassword = document.getElementById('pwd-current').value;
+      const newPassword = document.getElementById('pwd-new').value;
+      const confirmPassword = document.getElementById('pwd-confirm').value;
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        showToast("Please fill in all password fields.", "error");
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showToast("New passwords do not match.", "error");
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showToast("New password must be at least 6 characters.", "error");
+        return;
+      }
+
+      try {
+        // Re-authenticate user before password change
+        const credential = firebase.auth.EmailAuthProvider.credential(currentUserAuth.email, currentPassword);
+        await currentUserAuth.reauthenticateWithCredential(credential);
+
+        // Update password in Firebase Auth
+        await currentUserAuth.updatePassword(newPassword);
+
+        document.getElementById('form-change-password').reset();
+        showToast("Password changed successfully!", "success");
+
+      } catch (err) {
+        let errStr = err.message;
+        if (err.code === 'auth/wrong-password') {
+          errStr = "Incorrect current password.";
+        }
+        showToast(errStr, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 7. NOTIFICATION PREFERENCES HANDLER
+    // ==========================================================================
+    async function saveNotificationSettings() {
+      if (!currentUserAuth) return;
+
+      const settings = {
+        referrals: document.getElementById('notif-referrals').checked,
+        system: document.getElementById('notif-system').checked,
+        promo: document.getElementById('notif-promo').checked
+      };
+
+      try {
+        await database.ref(`users/${currentUserAuth.uid}/notificationSettings`).set(settings);
+        showToast("Notification preferences saved!", "success");
+      } catch (err) {
+        showToast("Failed to save settings: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 8. LOGOUT HANDLER
+    // ==========================================================================
+    function handleLogout() {
+      if (confirm("Are you sure you want to sign out?")) {
+        auth.signOut().then(() => {
+          window.location.href = 'index.html';
+        });
+      }
+    }
+
+    // ==========================================================================
+    // 9. HELPER FUNCTIONS
+    // ==========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+  </script>
+</body>
+</html>
