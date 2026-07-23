@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - Wallet & Withdraw</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDKs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & MOBILE-FIRST METRICS
+       ========================================================================== */
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --input-bg: rgba(10, 15, 26, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Mobile Spacing Metrics */
+      --page-pad: 14px;
+      --card-gap: 12px;
+      --section-gap: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: var(--page-pad);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glow */
+    .bg-glow {
+      position: fixed;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.08);
+      filter: blur(90px);
+      top: -40px;
+      left: -40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* ==========================================================================
+       2. TOASTS & LOADING OVERLAY
+       ========================================================================== */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--accent-gold); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(16, 185, 129, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Section Headers */
+    .section-head {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .section-head svg {
+      stroke: var(--primary);
+    }
+
+    /* ==========================================================================
+       3. HEADER & BALANCE OVERVIEW CARD
+       ========================================================================== */
+    .wallet-hero-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      margin-bottom: var(--section-gap);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .uid-badge-sm {
+      font-size: 10px;
+      color: var(--accent-gold);
+      background: rgba(245, 158, 11, 0.15);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    .status-badge-sm {
+      font-size: 10px;
+      color: var(--primary);
+      background: rgba(16, 185, 129, 0.15);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .hero-main-balance {
+      text-align: center;
+      margin: 14px 0 18px;
+    }
+
+    .bal-title-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .bal-huge-amount {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+
+    .hero-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: rgba(10, 15, 26, 0.5);
+      padding: 12px 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+    }
+
+    .mini-stat-lbl {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .mini-stat-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       4. WITHDRAW FORM & LOCKING MECHANICS
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: var(--section-gap);
+    }
+
+    /* Active Referral Warning Banner */
+    .lock-warning-box {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent-gold);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .input-box, .select-box {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .select-box option {
+      background: #0f172a;
+      color: white;
+    }
+
+    .input-box:focus, .select-box:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .btn-submit-primary {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px var(--primary-glow);
+      transition: var(--transition);
+      margin-top: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-submit-primary:disabled {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      border: 1px solid var(--card-border);
+    }
+
+    /* ==========================================================================
+       5. ACCOUNT WITHDRAWAL SUMMARY GRID
+       ========================================================================== */
+    .summary-2col {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .stat-mini-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: var(--radius-md);
+    }
+
+    .stat-mini-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .stat-mini-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       6. WITHDRAW HISTORY LIST & STATUS BADGES
+       ========================================================================== */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hist-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hist-method {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .hist-acc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .hist-date {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .hist-right {
+      text-align: right;
+    }
+
+    .hist-amount {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* Status Badge Colors */
+    .status-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    .status-badge.pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-gold);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .status-badge.approved {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge.rejected {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .empty-state {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* ==========================================================================
+       7. HELP & RULES SECTION
+       ========================================================================== */
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .rule-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 15, 26, 0.4);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 11px;
+    }
+
+    .rule-key {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .rule-val {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       8. FIXED BOTTOM NAVIGATION BAR
+       ========================================================================== */
+    .bottom-nav-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-decoration: none;
+      color: var(--text-muted);
+      width: 20%;
+      height: 100%;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-tab.active {
+      color: var(--primary);
+    }
+
+    .nav-tab.active svg {
+      stroke: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light Glow -->
+  <div class="bg-glow"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Securing Wallet Data...</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- WALLET HERO HEADER CARD -->
+    <div class="wallet-hero-card">
+      <div class="hero-top">
+        <span id="user-uid-tag" class="uid-badge-sm">UID: ------</span>
+        <span id="user-status-tag" class="status-badge-sm">ACTIVE MEMBER</span>
+      </div>
+
+      <div class="hero-main-balance">
+        <div class="bal-title-lbl">Current Balance</div>
+        <div id="hero-balance-val" class="bal-huge-amount">৳ 0.00</div>
+      </div>
+
+      <div class="hero-stats-grid">
+        <div>
+          <div class="mini-stat-lbl">Today</div>
+          <div id="stat-today-earning" class="mini-stat-val">৳ 0.00</div>
+        </div>
+        <div>
+          <div class="mini-stat-lbl">Referral</div>
+          <div id="stat-ref-earning" class="mini-stat-val">৳ 0.00</div>
+        </div>
+        <div>
+          <div class="mini-stat-lbl">Lifetime</div>
+          <div id="stat-lifetime-earning" class="mini-stat-val">৳ 0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WITHDRAW REQUEST FORM CARD -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+        Request Withdrawal
+      </div>
+
+      <!-- Warning Banner for locked referrals -->
+      <div id="active-ref-warning" class="lock-warning-box" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Complete at least 1 Active Referral to unlock withdrawals.</span>
+      </div>
+
+      <form id="form-withdraw" onsubmit="handleWithdrawSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Withdraw Amount (Min. 100 Taka)</label>
+          <input type="number" id="withdraw-amount" class="input-box" placeholder="Enter amount e.g. 500" min="100" step="1" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Payment Method</label>
+          <select id="withdraw-method" class="select-box" required>
+            <option value="" disabled selected>Select Payment Method</option>
+            <option value="bKash">bKash Personal</option>
+            <option value="Nagad">Nagad Personal</option>
+            <option value="Rocket">Rocket Personal</option>
+            <option value="Binance Pay">Binance Pay ID</option>
+            <option value="USDT TRC20">USDT (TRC20 Wallet)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Account Number / Wallet Address</label>
+          <input type="text" id="withdraw-acc-number" class="input-box" placeholder="Enter phone or wallet address" required>
+        </div>
+
+        <button type="submit" id="btn-withdraw-submit" class="btn-submit-primary">
+          Submit Withdraw Request
+        </button>
+      </form>
+    </section>
+
+    <!-- ACCOUNT SUMMARY STATISTICS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Withdrawal Statistics
+      </div>
+
+      <div class="summary-2col">
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Withdrawable Balance</div>
+          <div id="stat-withdrawable-bal" class="stat-mini-val" style="color:var(--primary);">৳ 0.00</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Pending Withdraw</div>
+          <div id="stat-pending-withdraw" class="stat-mini-val" style="color:var(--accent-gold);">৳ 0.00</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Total Approved</div>
+          <div id="stat-approved-withdraw" class="stat-mini-val" style="color:var(--primary);">৳ 0.00</div>
+        </div>
+
+        <div class="stat-mini-card">
+          <div class="stat-mini-label">Rejected Requests</div>
+          <div id="stat-rejected-count" class="stat-mini-val" style="color:var(--danger);">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WITHDRAW HISTORY SECTION -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Withdrawal History
+      </div>
+
+      <div id="withdraw-history-list" class="history-list">
+        <div class="empty-state">No withdrawal records found.</div>
+      </div>
+    </section>
+
+    <!-- RULES & HELP SECTION -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Platform Withdrawal Policy
+      </div>
+
+      <div class="rules-list">
+        <div class="rule-item">
+          <span class="rule-key">Minimum Withdrawal</span>
+          <span class="rule-val" style="color:var(--primary);">100 Taka</span>
+        </div>
+
+        <div class="rule-item">
+          <span class="rule-key">Withdrawal Interval</span>
+          <span class="rule-val">Every 3 Days (72 Hours)</span>
+        </div>
+
+        <div class="rule-item">
+          <span class="rule-key">Required Active Referrals</span>
+          <span class="rule-val" style="color:var(--accent-blue);">At least 1 Active Referral</span>
+        </div>
+
+        <div class="rule-item">
+          <span class="rule-key">Account Activation Fee</span>
+          <span class="rule-val">520 Taka</span>
+        </div>
+
+        <div class="rule-item">
+          <span class="rule-key">Direct Referral Bonus</span>
+          <span class="rule-val" style="color:var(--accent-gold);">170 Taka</span>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /app-container -->
+
+  <!-- FIXED BOTTOM NAVIGATION BAR (BALANCE ACTIVE) -->
+  <nav class="bottom-nav-fixed">
+    <a href="home.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">Home</span>
+    </a>
+
+    <a href="balance.html" class="nav-tab active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+      <span class="nav-label">Balance</span>
+    </a>
+
+    <a href="referral.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+      <span class="nav-label">Referral</span>
+    </a>
+
+    <a href="leaderboard.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      <span class="nav-label">Leader</span>
+    </a>
+
+    <a href="profile.html" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT REALTIME WALLET & WITHDRAW LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    let currentUser = null;
+    let currentUserData = null;
+    let userWithdrawalsList = [];
+
+    // ==========================================================================
+    // 2. AUTHENTICATION & DATABASE LISTENERS
+    // ==========================================================================
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentUser = user;
+
+      // Realtime User Data Listener
+      database.ref('users/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          auth.signOut();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (data.accountStatus !== 'active') {
+          alert("Your account is waiting for Main Admin approval.");
+          auth.signOut().then(() => window.location.href = 'index.html');
+          return;
+        }
+
+        currentUserData = data;
+        updateUIWithUserData(data);
+        hideLoader();
+      }, (error) => {
+        showToast(error.message, "error");
+        hideLoader();
+      });
+
+      // Realtime Withdrawals Listener
+      database.ref('user_withdraws/' + user.uid).on('value', (snapshot) => {
+        const data = snapshot.val();
+        userWithdrawalsList = [];
+
+        if (data) {
+          Object.keys(data).forEach(key => {
+            userWithdrawalsList.push({ id: key, ...data[key] });
+          });
+        }
+
+        // Sort Newest First
+        userWithdrawalsList.sort((a, b) => (b.requestTime || 0) - (a.requestTime || 0));
+
+        renderWithdrawalHistory(userWithdrawalsList);
+        calculateWithdrawStats(userWithdrawalsList);
+      });
+    });
+
+    // ==========================================================================
+    // 3. UI DATA BINDING
+    // ==========================================================================
+    function updateUIWithUserData(data) {
+      document.getElementById('user-uid-tag').textContent = `UID: ${data.uid || data.referralCode || '------'}`;
+      document.getElementById('user-status-tag').textContent = (data.accountStatus || 'ACTIVE').toUpperCase();
+
+      const bal = data.balance || 0;
+      document.getElementById('hero-balance-val').textContent = `৳ ${bal.toFixed(2)}`;
+      document.getElementById('stat-withdrawable-bal').textContent = `৳ ${bal.toFixed(2)}`;
+
+      document.getElementById('stat-today-earning').textContent = `৳ ${(data.todayEarning || 0).toFixed(2)}`;
+      document.getElementById('stat-ref-earning').textContent = `৳ ${(data.referralEarnings || (data.activeReferral ? data.activeReferral * 170 : 0)).toFixed(2)}`;
+      document.getElementById('stat-lifetime-earning').textContent = `৳ ${(data.totalEarnings || bal).toFixed(2)}`;
+
+      // Active Referral Lock Validation
+      const activeRef = data.activeReferral || 0;
+      const warningBox = document.getElementById('active-ref-warning');
+      const submitBtn = document.getElementById('btn-withdraw-submit');
+
+      if (activeRef < 1) {
+        warningBox.style.display = 'flex';
+        submitBtn.disabled = true;
+      } else {
+        warningBox.style.display = 'none';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // ==========================================================================
+    // 4. WITHDRAW SUBMIT HANDLER & VALIDATION
+    // ==========================================================================
+    async function handleWithdrawSubmit(event) {
+      event.preventDefault();
+
+      if (!currentUser || !currentUserData) return;
+
+      const amount = parseFloat(document.getElementById('withdraw-amount').value);
+      const method = document.getElementById('withdraw-method').value;
+      const accNumber = document.getElementById('withdraw-acc-number').value.trim();
+
+      // Rule 1: Active Referral >= 1
+      if ((currentUserData.activeReferral || 0) < 1) {
+        showToast("You need at least 1 Active Referral to withdraw.", "error");
+        return;
+      }
+
+      // Rule 2: Minimum 100 Taka
+      if (isNaN(amount) || amount < 100) {
+        showToast("Minimum withdrawal amount is 100 Taka.", "error");
+        return;
+      }
+
+      // Rule 3: Balance Check
+      if (amount > (currentUserData.balance || 0)) {
+        showToast("Insufficient balance for this withdrawal.", "error");
+        return;
+      }
+
+      // Rule 4: Method and Account required
+      if (!method || !accNumber) {
+        showToast("Please select a payment method and enter account number.", "error");
+        return;
+      }
+
+      // Rule 5: Check existing pending requests
+      const hasPending = userWithdrawalsList.some(w => w.status === 'Pending');
+      if (hasPending) {
+        showToast("You already have a Pending withdrawal request.", "warning");
+        return;
+      }
+
+      // Rule 6: 72 Hours Interval Validation
+      const now = Date.now();
+      const lastRequest = userWithdrawalsList[0]; // Newest request
+      if (lastRequest && lastRequest.requestTime) {
+        const timeDiffHours = (now - lastRequest.requestTime) / (1000 * 60 * 60);
+        if (timeDiffHours < 72) {
+          const hoursLeft = Math.ceil(72 - timeDiffHours);
+          showToast(`Withdrawal allowed once every 3 days. Wait ${hoursLeft} hour(s).`, "warning");
+          return;
+        }
+      }
+
+      // Create Withdraw Request
+      const withdrawId = database.ref('withdraws').push().key;
+      const nowTime = firebase.database.ServerValue.TIMESTAMP;
+
+      const withdrawPayload = {
+        id: withdrawId,
+        authUid: currentUser.uid,
+        uid: currentUserData.uid || currentUserData.referralCode || 'N/A',
+        userName: currentUserData.name || 'User',
+        amount: amount,
+        method: method,
+        accountNumber: accNumber,
+        status: "Pending",
+        requestTime: nowTime
+      };
+
+      const updates = {};
+      // Note: Do NOT deduct balance now. Balance is deducted ONLY upon Admin Approval.
+      updates[`withdraws/${withdrawId}`] = withdrawPayload;
+      updates[`user_withdraws/${currentUser.uid}/${withdrawId}`] = withdrawPayload;
+
+      // Add Notification
+      const notifKey = database.ref(`notifications/${currentUser.uid}`).push().key;
+      updates[`notifications/${currentUser.uid}/${notifKey}`] = {
+        title: "Withdrawal Request Submitted",
+        message: `Your request for ৳${amount} via ${method} (${accNumber}) is under review.`,
+        timestamp: Date.now()
+      };
+
+      try {
+        await database.ref().update(updates);
+        document.getElementById('form-withdraw').reset();
+        showToast("Withdrawal request submitted successfully!", "success");
+      } catch (err) {
+        showToast("Failed to submit request: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 5. WITHDRAW HISTORY & STATS RENDERING
+    // ==========================================================================
+    function renderWithdrawalHistory(list) {
+      const container = document.getElementById('withdraw-history-list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-state">No withdrawal records found.</div>`;
+        return;
+      }
+
+      list.forEach(w => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+
+        let badgeClass = 'pending';
+        if (w.status === 'Approved') badgeClass = 'approved';
+        else if (w.status === 'Rejected') badgeClass = 'rejected';
+
+        const dateStr = w.requestTime ? new Date(w.requestTime).toLocaleString() : 'N/A';
+
+        div.innerHTML = `
+          <div class="hist-left">
+            <div class="hist-method">${escapeHTML(w.method || 'Method')}</div>
+            <div class="hist-acc">${escapeHTML(w.accountNumber || '')}</div>
+            <div class="hist-date">${dateStr}</div>
+          </div>
+          <div class="hist-right">
+            <div class="hist-amount">৳ ${(w.amount || 0).toFixed(2)}</div>
+            <span class="status-badge ${badgeClass}">${w.status || 'Pending'}</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function calculateWithdrawStats(list) {
+      let pendingSum = 0;
+      let approvedSum = 0;
+      let rejectedCount = 0;
+
+      list.forEach(w => {
+        if (w.status === 'Pending') pendingSum += (w.amount || 0);
+        else if (w.status === 'Approved') approvedSum += (w.amount || 0);
+        else if (w.status === 'Rejected') rejectedCount++;
+      });
+
+      document.getElementById('stat-pending-withdraw').textContent = `৳ ${pendingSum.toFixed(2)}`;
+      document.getElementById('stat-approved-withdraw').textContent = `৳ ${approvedSum.toFixed(2)}`;
+      document.getElementById('stat-rejected-count').textContent = rejectedCount;
+    }
+
+    // ==========================================================================
+    // 6. HELPER FUNCTIONS
+    // ==========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      let iconSvg = '';
+      if(type === 'success') {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+      } else if (type === 'error') {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+      } else {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+      }
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
