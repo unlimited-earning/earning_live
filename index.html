@@ -584,7 +584,7 @@
         </button>
       </form>
 
-      <!-- 2. REGISTER FORM (REFERRAL CODE MANDATORY) -->
+      <!-- 2. REGISTER FORM (REFERRAL CODE OPTIONAL) -->
       <form id="form-register" class="form-section" onsubmit="handleRegister(event)">
         
         <div class="form-group">
@@ -639,11 +639,11 @@
           </div>
         </div>
 
-        <!-- Referral Code Required Field -->
+        <!-- Optional Referral Code Field -->
         <div class="form-group">
-          <label class="form-label">Referral Code (Required)</label>
+          <label class="form-label">Referral Code (Optional)</label>
           <div class="input-wrapper">
-            <input type="text" id="reg-referral" class="form-input" placeholder="6-digit numeric UID" maxlength="6" pattern="[0-9]*" required>
+            <input type="text" id="reg-referral" class="form-input" placeholder="6-digit numeric UID" maxlength="6" pattern="[0-9]*">
             <svg class="input-icon" viewBox="0 0 24 24" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
           </div>
         </div>
@@ -664,7 +664,7 @@
         </button>
       </form>
 
-      <!-- 3. PREMIUM REGISTRATION SUCCESS SCREEN (UID & REF CODE HIDDEN) -->
+      <!-- 3. PREMIUM REGISTRATION SUCCESS SCREEN -->
       <div id="success-screen">
         <div class="success-icon-wrap">
           <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="3">
@@ -850,7 +850,7 @@
     }
 
     // -------------------------------------------------------------
-    // 3. REGISTRATION FLOW (MANDATORY REFERRAL CODE VERIFICATION)
+    // 3. REGISTRATION FLOW (OPTIONAL REFERRAL CODE)
     // -------------------------------------------------------------
     async function handleRegister(event) {
       event.preventDefault();
@@ -861,11 +861,11 @@
       const email = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-password').value;
       const confirmPassword = document.getElementById('reg-confirm-password').value;
-      const referralInput = document.getElementById('reg-referral').value.trim();
+      let referralInput = document.getElementById('reg-referral').value.trim();
 
       // Mandatory Field Validations
-      if (!name || !gender || !whatsapp || !email || !password || !confirmPassword || !referralInput) {
-        showToast('Please fill in all required fields including Referral Code.', 'error');
+      if (!name || !gender || !whatsapp || !email || !password || !confirmPassword) {
+        showToast('Please fill in all required fields.', 'error');
         return;
       }
 
@@ -874,30 +874,35 @@
         return;
       }
 
-      if (!/^\d{6}$/.test(referralInput)) {
-        showToast('Referral Code must be a 6-digit number.', 'error');
-        return;
-      }
-
       toggleLoading('btn-reg-submit', 'spinner-reg', true);
 
       try {
-        // Step A: Verify Referral Code exists in Realtime Database
-        const usersSnapshot = await database.ref('users').once('value');
-        const allUsers = usersSnapshot.val() || {};
-
-        let isReferralValid = false;
-        Object.keys(allUsers).forEach(key => {
-          const u = allUsers[key];
-          if ((u.uid && u.uid.toString() === referralInput) || (u.referralCode && u.referralCode.toString() === referralInput)) {
-            isReferralValid = true;
+        // Step A: If Referral Code is provided, verify it exists
+        if (referralInput) {
+          if (!/^\d{6}$/.test(referralInput)) {
+            showToast('Referral Code must be a 6-digit number.', 'error');
+            toggleLoading('btn-reg-submit', 'spinner-reg', false);
+            return;
           }
-        });
 
-        if (!isReferralValid) {
-          showToast("Invalid Referral Code.", "error");
-          toggleLoading('btn-reg-submit', 'spinner-reg', false);
-          return;
+          const usersSnapshot = await database.ref('users').once('value');
+          const allUsers = usersSnapshot.val() || {};
+
+          let isReferralValid = false;
+          Object.keys(allUsers).forEach(key => {
+            const u = allUsers[key];
+            if ((u.uid && u.uid.toString() === referralInput) || (u.referralCode && u.referralCode.toString() === referralInput)) {
+              isReferralValid = true;
+            }
+          });
+
+          if (!isReferralValid) {
+            showToast("Invalid Referral Code.", "error");
+            toggleLoading('btn-reg-submit', 'spinner-reg', false);
+            return;
+          }
+        } else {
+          referralInput = null;
         }
 
         // Step B: Create user in Firebase Authentication
