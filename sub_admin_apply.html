@@ -322,6 +322,41 @@
       transform: translateX(4px);
     }
 
+    /* Position Update Trigger Button */
+    .btn-update-position {
+      width: 100%;
+      padding: 12px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid var(--accent-purple);
+      color: var(--accent-purple);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-update-position:hover {
+      background: var(--accent-purple);
+      color: white;
+    }
+
+    .cooldown-notice-card {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-size: 11px;
+      color: var(--accent-gold);
+      font-weight: 600;
+      line-height: 1.4;
+      text-align: center;
+    }
+
     /* ==========================================================================
        5. CATEGORY SELECTION CARDS
        ========================================================================== */
@@ -589,7 +624,7 @@
     </div>
 
     <!-- ELIGIBILITY & APPLICANT AUTO-LOAD SUMMARY -->
-    <div class="card-block">
+    <div id="applicant-profile-block" class="card-block">
       <div class="section-head">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         Applicant Profile (Auto-Loaded)
@@ -656,6 +691,19 @@
       </a>
     </div>
 
+    <!-- POSITION UPDATE TRIGGER BUTTON / COOLDOWN BLOCK (FOR APPROVED SUB ADMINS) -->
+    <div id="position-update-trigger-block" class="card-block" style="display:none;">
+      <button id="btn-show-position-update" class="btn-update-position" onclick="revealPositionUpdateForm()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"/><line x1="12" y1="18" x2="12" y2="6"/></svg>
+        Update Position
+      </button>
+
+      <div id="cooldown-notice-box" class="cooldown-notice-card" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div id="cooldown-days-txt">You can request a position update after the 14-day cooldown period.</div>
+      </div>
+    </div>
+
     <!-- APPLICATION STATUS (IF PENDING / REJECTED) -->
     <div id="app-status-block" class="card-block" style="display:none;">
       <div class="section-head">
@@ -682,11 +730,11 @@
       </div>
     </div>
 
-    <!-- APPLICATION FORM BLOCK (POSITION UPDATE / FIRST APPLY) -->
-    <div class="card-block">
+    <!-- APPLICATION FORM BLOCK (HIDDEN FOR APPROVED SUB ADMINS BY DEFAULT) -->
+    <div id="apply-form-block" class="card-block">
       <div class="section-head">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span id="form-section-title">Apply For Position Update</span>
+        <span id="form-section-title">Select Leadership Category</span>
       </div>
 
       <!-- CATEGORY SELECTION CARDS -->
@@ -743,7 +791,7 @@
     </div>
 
     <!-- REVIEW PROCESS INFORMATION -->
-    <div class="card-block">
+    <div id="review-process-block" class="card-block">
       <div class="section-head">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         Application Review Process
@@ -755,7 +803,7 @@
     </div>
 
     <!-- RULES CARD -->
-    <div class="card-block">
+    <div id="terms-policy-block" class="card-block">
       <div class="section-head">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         Leadership Terms & Policy
@@ -869,7 +917,7 @@
 
       currentUser = user;
 
-      // Realtime Current User Data
+      // Realtime Current User Data Listener
       database.ref('users/' + user.uid).on('value', (snapshot) => {
         const data = snapshot.val();
 
@@ -899,7 +947,7 @@
         }
       });
 
-      // Realtime User Sub Admin Application Status
+      // Realtime User Sub Admin Application Status Listener
       database.ref('sub_admin_applications/' + user.uid).on('value', (snapshot) => {
         existingApplication = snapshot.val();
         evaluateApplicationRules();
@@ -907,7 +955,7 @@
     });
 
     // ==========================================================================
-    // 3. UI DATA BINDING & RULE EVALUATION
+    // 3. UI DATA BINDING & REALTIME VISIBILITY ENGINE
     // ==========================================================================
     function bindUserDataSummary(data) {
       document.getElementById('auto-fullname').textContent = data.name || 'User';
@@ -936,71 +984,113 @@
 
     function evaluateApplicationRules() {
       const currentPosBlock = document.getElementById('current-position-block');
-      const statusBlock = document.getElementById('app-status-block');
-      const submitBtn = document.getElementById('btn-submit-application');
+      const posUpdateTriggerBlock = document.getElementById('position-update-trigger-block');
+      const appStatusBlock = document.getElementById('app-status-block');
+      const applyFormBlock = document.getElementById('apply-form-block');
+      const reviewProcessBlock = document.getElementById('review-process-block');
+      const termsPolicyBlock = document.getElementById('terms-policy-block');
       const pendingMsg = document.getElementById('pending-review-msg');
 
-      // Rule A: Check if User is ALREADY an approved Sub Admin
+      const now = Date.now();
+      const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+
+      // CASE 1: USER IS AN APPROVED SUB ADMIN
       if (currentUserData && currentUserData.isSubAdmin) {
         currentPosBlock.style.display = 'block';
         const roleName = currentUserData.subAdminRole || 'WhatsApp Admin';
         document.getElementById('current-role-title').textContent = roleName;
-        document.getElementById('form-section-title').textContent = "Apply For Position Update";
-
-        // Dynamic Title for "Go To Sub Admin Panel" Button
         document.getElementById('panel-btn-title').textContent = `Open ${roleName} Dashboard`;
 
-        // Position Lock Rule: 14 Days after approval
-        if (currentUserData.roleApprovedAt) {
-          const daysPassed = (Date.now() - currentUserData.roleApprovedAt) / (1000 * 60 * 60 * 24);
-          if (daysPassed < 14) {
-            const daysRemaining = Math.ceil(14 - daysPassed);
-            showToast(`Position locked for ${daysRemaining} day(s) after approval.`, "warning");
-            submitBtn.disabled = true;
-            return;
-          }
+        // Hide Application Form, Review Process & Terms Policy for Approved Sub Admins by default
+        applyFormBlock.style.display = 'none';
+        reviewProcessBlock.style.display = 'none';
+        termsPolicyBlock.style.display = 'none';
+        appStatusBlock.style.display = 'none';
+        posUpdateTriggerBlock.style.display = 'block';
+
+        // Check 14-day Cooldown
+        const roleApprovedAt = currentUserData.roleApprovedAt || 0;
+        const timePassed = now - roleApprovedAt;
+
+        if (timePassed >= fourteenDaysMs) {
+          // 14 days passed -> Show "Update Position" button
+          document.getElementById('btn-show-position-update').style.display = 'flex';
+          document.getElementById('cooldown-notice-box').style.display = 'none';
+        } else {
+          // Less than 14 days -> Hide "Update Position" button, show Cooldown Message
+          document.getElementById('btn-show-position-update').style.display = 'none';
+          document.getElementById('cooldown-notice-box').style.display = 'block';
+
+          const daysRemaining = Math.ceil((fourteenDaysMs - timePassed) / (1000 * 60 * 60 * 24));
+          document.getElementById('cooldown-days-txt').textContent = `You can request a position update after the 14-day cooldown period. (${daysRemaining} day(s) remaining)`;
         }
-      } else {
-        currentPosBlock.style.display = 'none';
+
+        return;
       }
 
-      // Rule B: Check Application Status (Pending / Rejected)
-      if (existingApplication) {
-        statusBlock.style.display = 'block';
+      // CASE 2: USER IS NOT AN APPROVED SUB ADMIN YET
+      currentPosBlock.style.display = 'none';
+      posUpdateTriggerBlock.style.display = 'none';
+
+      // Check if Pending Application
+      if (existingApplication && existingApplication.status === 'Pending') {
+        appStatusBlock.style.display = 'block';
         document.getElementById('app-status-cat').textContent = existingApplication.category;
 
         const badge = document.getElementById('app-status-badge');
-        badge.textContent = existingApplication.status.toUpperCase();
-        badge.className = `badge-status-app ${existingApplication.status.toLowerCase()}`;
+        badge.textContent = 'PENDING';
+        badge.className = 'badge-status-app pending';
 
         document.getElementById('app-status-date').textContent = existingApplication.applyTime ? new Date(existingApplication.applyTime).toLocaleDateString() : 'Recent';
+        pendingMsg.style.display = 'block';
 
-        if (existingApplication.status === 'Pending') {
-          submitBtn.disabled = true;
-          pendingMsg.style.display = 'block';
-          showToast("Your application is under review.", "warning");
-          return;
-        } else {
+        // Hide Apply Form, Review Process, Terms Policy
+        applyFormBlock.style.display = 'none';
+        reviewProcessBlock.style.display = 'none';
+        termsPolicyBlock.style.display = 'none';
+        return;
+      }
+
+      // Check if Rejected Application with 48h cooldown
+      if (existingApplication && existingApplication.status === 'Rejected' && existingApplication.reviewTime) {
+        const hoursPassed = (now - existingApplication.reviewTime) / (1000 * 60 * 60);
+        if (hoursPassed < 48) {
+          appStatusBlock.style.display = 'block';
+          document.getElementById('app-status-cat').textContent = existingApplication.category;
+
+          const badge = document.getElementById('app-status-badge');
+          badge.textContent = 'REJECTED';
+          badge.className = 'badge-status-app rejected';
+
+          document.getElementById('app-status-date').textContent = existingApplication.reviewTime ? new Date(existingApplication.reviewTime).toLocaleDateString() : 'Recent';
           pendingMsg.style.display = 'none';
-        }
 
-        // Rejection Cooldown Rule: 48 Hours
-        if (existingApplication.status === 'Rejected' && existingApplication.reviewTime) {
-          const hoursPassed = (Date.now() - existingApplication.reviewTime) / (1000 * 60 * 60);
-          if (hoursPassed < 48) {
-            const hoursRemaining = Math.ceil(48 - hoursPassed);
-            submitBtn.disabled = true;
-            showToast(`Rejection cooldown active. Wait ${hoursRemaining} hour(s) to re-apply.`, "warning");
-            return;
-          }
+          applyFormBlock.style.display = 'none';
+          reviewProcessBlock.style.display = 'none';
+          termsPolicyBlock.style.display = 'none';
+
+          const hoursRemaining = Math.ceil(48 - hoursPassed);
+          showToast(`Rejection cooldown active. Wait ${hoursRemaining} hour(s) to re-apply.`, "warning");
+          return;
         }
-      } else {
-        statusBlock.style.display = 'none';
       }
 
-      if (isEligibleByReferral) {
-        submitBtn.disabled = false;
-      }
+      // CASE 3: NO SUB ADMIN / ELIGIBLE TO APPLY
+      appStatusBlock.style.display = 'none';
+      applyFormBlock.style.display = 'block';
+      reviewProcessBlock.style.display = 'block';
+      termsPolicyBlock.style.display = 'block';
+      document.getElementById('form-section-title').textContent = "Select Leadership Category";
+    }
+
+    function revealPositionUpdateForm() {
+      document.getElementById('apply-form-block').style.display = 'block';
+      document.getElementById('review-process-block').style.display = 'block';
+      document.getElementById('terms-policy-block').style.display = 'block';
+      document.getElementById('form-section-title').textContent = "Apply For Position Update";
+      document.getElementById('position-update-trigger-block').style.display = 'none';
+
+      document.getElementById('apply-form-block').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // ==========================================================================
