@@ -16,7 +16,7 @@
 
   <style>
     /* ==========================================================================
-       1. GLOBAL STYLES & MOBILE-FIRST SYSTEM
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
        ========================================================================== */
     :root {
       --bg-dark: #080c14;
@@ -28,10 +28,12 @@
       --accent-gold: #f59e0b;
       --accent-blue: #3b82f6;
       --accent-purple: #8b5cf6;
+      --wa-green: #25D366;
       --danger: #ef4444;
       --text-main: #f9fafb;
       --text-muted: #9ca3af;
       --input-bg: rgba(10, 15, 26, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
       
       --radius-lg: 18px;
       --radius-md: 12px;
@@ -110,8 +112,9 @@
       animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.success { border-left: 4px solid var(--wa-green); }
     .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--accent-gold); }
 
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-20px) scale(0.95); }
@@ -134,15 +137,13 @@
     .spinner {
       width: 44px;
       height: 44px;
-      border: 3.5px solid rgba(16, 185, 129, 0.15);
-      border-top-color: var(--primary);
+      border: 3.5px solid rgba(37, 211, 102, 0.15);
+      border-top-color: var(--wa-green);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Main Container */
     .app-container {
@@ -161,12 +162,10 @@
       color: var(--text-main);
     }
 
-    .section-head svg {
-      stroke: var(--primary);
-    }
+    .section-head svg { stroke: var(--wa-green); }
 
     /* ==========================================================================
-       2. WHATSAPP ADMIN HEADER CARD
+       2. WHATSAPP ADMIN HERO HEADER
        ========================================================================== */
     .admin-hero-card {
       background: linear-gradient(135deg, rgba(37, 211, 102, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
@@ -181,8 +180,16 @@
     .profile-top-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      gap: 10px;
       margin-bottom: 14px;
+    }
+
+    .profile-left-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
     }
 
     .admin-avatar {
@@ -190,13 +197,9 @@
       height: 52px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #25D366;
+      border: 2px solid var(--wa-green);
       box-shadow: 0 0 15px rgba(37, 211, 102, 0.3);
       flex-shrink: 0;
-    }
-
-    .admin-title-box {
-      min-width: 0;
     }
 
     .admin-name {
@@ -211,7 +214,7 @@
     .wa-badge-tag {
       font-size: 10px;
       font-weight: 800;
-      color: #25D366;
+      color: var(--wa-green);
       background: rgba(37, 211, 102, 0.15);
       border: 1px solid rgba(37, 211, 102, 0.3);
       padding: 2px 8px;
@@ -221,35 +224,59 @@
       text-transform: uppercase;
     }
 
-    .weekly-bal-box {
+    .online-status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: var(--primary);
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.12);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .online-status-dot::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 6px var(--primary);
+    }
+
+    /* Countdown & Dual Balance Box */
+    .balance-dual-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
       background: rgba(10, 15, 26, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.05);
       padding: 12px;
       border-radius: var(--radius-md);
+      margin-bottom: 10px;
+    }
+
+    .bal-lbl-sm { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .bal-val-lg { font-size: 16px; font-weight: 800; line-height: 1.2; margin-top: 2px; }
+
+    .countdown-timer-box {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-
-    .bal-lbl-sm {
-      font-size: 10px;
-      color: var(--text-muted);
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .bal-val-lg {
-      font-size: 18px;
-      font-weight: 800;
-      color: #25D366;
+      font-size: 11px;
     }
 
     /* ==========================================================================
-       3. TOP STATISTICS GRID
+       3. TOP OVERVIEW CARDS (2-COLUMN GRID)
        ========================================================================== */
-    .stats-3col {
+    .stats-2col {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 10px;
       margin-bottom: var(--section-gap);
     }
@@ -259,26 +286,14 @@
       border: 1px solid var(--card-border);
       backdrop-filter: blur(8px);
       border-radius: var(--radius-md);
-      padding: 12px 8px;
-      text-align: center;
+      padding: 12px;
     }
 
-    .stat-lbl {
-      font-size: 9px;
-      color: var(--text-muted);
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .stat-val {
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--text-main);
-      margin-top: 2px;
-    }
+    .stat-lbl { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .stat-val { font-size: 16px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
 
     /* ==========================================================================
-       4. ASSIGNED USER CARDS & ACCEPT SYSTEM
+       4. ASSIGNED USER CARDS & ACCEPT ENGINE
        ========================================================================== */
     .card-block {
       background: var(--card-bg);
@@ -342,7 +357,7 @@
       color: var(--text-muted);
     }
 
-    .btn-accept {
+    .btn-accept-wa {
       background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
       border: none;
       color: white;
@@ -358,73 +373,122 @@
       box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
     }
 
-    .btn-accept:active {
-      transform: scale(0.96);
-    }
+    .btn-accept-wa:active { transform: scale(0.96); }
 
-    .btn-guided {
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      color: var(--accent-blue);
-      padding: 6px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .btn-guided.completed {
-      background: rgba(16, 185, 129, 0.15);
-      border-color: rgba(16, 185, 129, 0.3);
-      color: var(--primary);
-    }
-
-    .btn-chat-wa {
-      background: #25D366;
-      color: white;
-      padding: 6px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 10px;
-      font-weight: 800;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .action-row-sm {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    /* Action Buttons Row for Assigned Users */
+    .action-btn-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
       border-top: 1px solid rgba(255, 255, 255, 0.04);
       padding-top: 8px;
     }
 
-    /* ==========================================================================
-       5. PAYMENT & ACTIVATION WARNING CARD
-       ========================================================================== */
-    .notice-card-danger {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: var(--radius-lg);
-      padding: 14px;
-      margin-bottom: var(--section-gap);
-    }
-
-    .notice-title-lbl {
-      color: var(--danger);
-      font-size: 12px;
-      font-weight: 800;
-      margin-bottom: 4px;
+    .btn-action-sm {
+      padding: 6px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      text-align: center;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      cursor: pointer;
       display: flex;
       align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .btn-wa-green { background: rgba(37, 211, 102, 0.15); border-color: rgba(37, 211, 102, 0.3); color: var(--wa-green); }
+
+    /* Payment Submitted Banner inside Assigned User Card */
+    .payment-submitted-box {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 11px;
+      color: var(--accent-gold);
+    }
+
+    .btn-notify-admin {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent-gold) 0%, #d97706 100%);
+      border: none;
+      color: white;
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       gap: 6px;
     }
 
+    /* Guide Status Select Dropdown */
+    .guide-select {
+      width: 100%;
+      padding: 6px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 11px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .guide-select option { background: #0f172a; color: white; }
+
     /* ==========================================================================
-       6. FIXED BOTTOM NAVIGATION BAR
+       5. MODALS & TABLES
        ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 11000;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+
+    .modal-card {
+      background: rgba(22, 30, 49, 0.98);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+    }
+
+    .detail-lbl { color: var(--text-muted); font-weight: 600; }
+    .detail-val { font-weight: 700; color: var(--text-main); text-align: right; }
+
+    /* Fixed Bottom Navigation Bar */
     .bottom-nav-fixed {
       position: fixed;
       bottom: 0;
@@ -453,33 +517,12 @@
       height: 100%;
     }
 
-    .nav-tab svg {
-      width: 22px;
-      height: 22px;
-      stroke: var(--text-muted);
-      transition: var(--transition);
-    }
+    .nav-tab svg { width: 22px; height: 22px; stroke: var(--text-muted); transition: var(--transition); }
+    .nav-label { font-size: 11px; font-weight: 600; line-height: 1; }
+    .nav-tab.active { color: var(--wa-green); }
+    .nav-tab.active svg { stroke: var(--wa-green); }
 
-    .nav-label {
-      font-size: 11px;
-      font-weight: 600;
-      line-height: 1;
-    }
-
-    .nav-tab.active {
-      color: #25D366;
-    }
-
-    .nav-tab.active svg {
-      stroke: #25D366;
-    }
-
-    .empty-txt {
-      text-align: center;
-      padding: 20px;
-      color: var(--text-muted);
-      font-size: 12px;
-    }
+    .empty-txt { text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px; }
   </style>
 </head>
 <body>
@@ -490,66 +533,72 @@
   <!-- Toast Notification System -->
   <div id="toast-container"></div>
 
-  <!-- Loading Animation Overlay -->
+  <!-- Fast Loading Overlay -->
   <div id="loading-overlay">
     <div class="spinner"></div>
-    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading WhatsApp Admin Session...</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Connecting WhatsApp Admin Engine...</div>
   </div>
 
   <div class="app-container">
 
-    <!-- ADMIN HERO HEADER -->
+    <!-- WHATSAPP ADMIN HERO HEADER -->
     <div class="admin-hero-card">
       <div class="profile-top-row">
-        <img id="admin-avatar" class="admin-avatar" src="https://ui-avatars.com/api/?name=Admin&background=25D366&color=fff" alt="Admin Avatar">
-        <div class="admin-title-box">
-          <div id="admin-name-txt" class="admin-name">Loading Admin...</div>
-          <span class="wa-badge-tag">WhatsApp Admin</span>
+        <div class="profile-left-info">
+          <img id="admin-avatar" class="admin-avatar" src="https://ui-avatars.com/api/?name=Admin&background=25D366&color=fff" alt="Avatar">
+          <div style="min-width:0;">
+            <div id="admin-name-txt" class="admin-name">Loading Admin...</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-top:2px;">
+              <span class="wa-badge-tag">WhatsApp Admin</span>
+              <span class="online-status-dot">Online</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="weekly-bal-box">
+      <!-- Dual Balances -->
+      <div class="balance-dual-box">
         <div>
           <div class="bal-lbl-sm">Weekly Balance</div>
-          <div id="weekly-balance-val" class="bal-val-lg">৳ 0.00</div>
+          <div id="weekly-balance-val" class="bal-val-lg" style="color:var(--wa-green);">৳ 0.00</div>
         </div>
         <div style="text-align:right;">
-          <div class="bal-lbl-sm">Auto Transfer</div>
-          <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Every 7 Days</div>
+          <div class="bal-lbl-sm">Main Balance</div>
+          <div id="main-balance-val" class="bal-val-lg" style="color:var(--primary);">৳ 0.00</div>
         </div>
       </div>
-    </div>
 
-    <!-- TOP STATISTICS GRID -->
-    <div class="stats-3col">
-      <div class="stat-mini-card">
-        <div class="stat-lbl">My Assigned</div>
-        <div id="stat-my-assigned" class="stat-val" style="color:var(--accent-blue);">0</div>
-      </div>
-
-      <div class="stat-mini-card">
-        <div class="stat-lbl">Completed</div>
-        <div id="stat-completed" class="stat-val" style="color:var(--primary);">0</div>
-      </div>
-
-      <div class="stat-mini-card">
-        <div class="stat-lbl">Weekly Earnings</div>
-        <div id="stat-weekly-earn" class="stat-val" style="color:#25D366;">৳ 0</div>
+      <!-- Weekly Transfer Countdown -->
+      <div class="countdown-timer-box">
+        <span style="color:var(--text-muted); font-weight:600;">Next Auto Transfer:</span>
+        <strong id="countdown-timer-txt" style="color:var(--accent-gold); font-weight:800;">7d 00h 00m</strong>
       </div>
     </div>
 
-    <!-- PAYMENT & ACTIVATION RULES NOTICE CARD -->
-    <div class="notice-card-danger">
-      <div class="notice-title-lbl">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Important Activation Rule
+    <!-- OVERVIEW STATS GRID -->
+    <div class="stats-2col">
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Today Earnings</div>
+        <div id="stat-today-earn" class="stat-val" style="color:var(--wa-green);">৳ 0</div>
       </div>
-      <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
-        When an assigned user completes payment, contact <strong>Main Admin</strong> using official channels. You cannot manually activate accounts. Activation is strictly managed by Main Admin.
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Lifetime Earnings</div>
+        <div id="stat-lifetime-earn" class="stat-val" style="color:var(--accent-purple);">৳ 0</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Assigned Users</div>
+        <div id="stat-assigned-count" class="stat-val" style="color:var(--accent-blue);">0</div>
+      </div>
+
+      <div class="stat-mini-card">
+        <div class="stat-lbl">Completed Activations</div>
+        <div id="stat-completed-count" class="stat-val" style="color:var(--primary);">0</div>
       </div>
     </div>
 
-    <!-- AVAILABLE UNASSIGNED PENDING USERS FEED -->
+    <!-- AVAILABLE UNASSIGNED PENDING USERS -->
     <section class="card-block">
       <div class="section-head">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
@@ -568,12 +617,58 @@
         My Assigned Users
       </div>
 
+      <!-- Search & Filter Controls -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <input type="text" id="assigned-search-input" class="input-box" placeholder="Search by name, UID..." oninput="renderMyAssignedUsersFeed()">
+        <select id="assigned-filter-select" class="guide-select" onchange="renderMyAssignedUsersFeed()">
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="submitted">Payment Submitted</option>
+          <option value="active">Active</option>
+        </select>
+      </div>
+
       <div id="my-assigned-users-list" class="user-card-stack">
         <div class="empty-txt">You haven't accepted any users yet.</div>
       </div>
     </section>
 
+    <!-- WEEKLY EARNING HISTORY -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Weekly Earning Activations
+      </div>
+
+      <div id="weekly-activations-list" style="display:flex; flex-direction:column; gap:6px;">
+        <div class="empty-txt">No weekly activations recorded yet.</div>
+      </div>
+    </section>
+
+    <!-- TRANSFER HISTORY -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Weekly Transfer History
+      </div>
+
+      <div id="transfer-history-list" style="display:flex; flex-direction:column; gap:6px;">
+        <div class="empty-txt">No weekly transfers recorded yet.</div>
+      </div>
+    </section>
+
   </div> <!-- /app-container -->
+
+  <!-- USER DETAILS MODAL -->
+  <div id="modal-view-user" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--card-border);">
+        <h3 style="font-size:13px; font-weight:800;">Assigned User Profile</h3>
+        <button style="background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer;" onclick="closeModal('modal-view-user')">&times;</button>
+      </div>
+      <div id="modal-user-content"></div>
+    </div>
+  </div>
 
   <!-- FIXED BOTTOM NAVIGATION BAR -->
   <nav class="bottom-nav-fixed">
@@ -614,6 +709,8 @@
 
     let currentUser = null;
     let currentUserData = null;
+    let myAssignedUsersList = [];
+    let mainAdminSupportWhatsapp = "+8801700000000";
 
     // ==========================================================================
     // 2. SECURITY GUARD & ROLE CHECK
@@ -626,7 +723,7 @@
 
       currentUser = user;
 
-      // Check Account & Role Status
+      // Realtime Listener for Current Admin Role
       database.ref('users/' + user.uid).on('value', (snapshot) => {
         const data = snapshot.val();
 
@@ -653,13 +750,24 @@
         currentUserData = data;
         bindAdminHeader(data);
         checkWeeklyAutoTransfer(user.uid, data);
+        updateWeeklyTransferCountdown(data.lastWeeklyTransferTime);
         initRealtimeUserListeners();
         hideLoader();
+      });
+
+      // Listen for Main Admin Support WhatsApp Settings
+      database.ref('settings/general/supportWhatsapp').on('value', (snapshot) => {
+        if (snapshot.val()) mainAdminSupportWhatsapp = snapshot.val();
+      });
+
+      // Listen for Transfer History
+      database.ref(`transfer_history/${user.uid}`).on('value', (snapshot) => {
+        renderTransferHistory(snapshot.val() || {});
       });
     });
 
     // ==========================================================================
-    // 3. UI DATA BINDING & HEADER
+    // 3. UI BINDING & COUNTDOWN TIMER
     // ==========================================================================
     function bindAdminHeader(data) {
       document.getElementById('admin-name-txt').textContent = data.name || 'Admin User';
@@ -667,45 +775,71 @@
       document.getElementById('admin-avatar').src = avatar;
 
       const weeklyBal = data.weeklyBalance || 0;
+      const mainBal = data.balance || 0;
+
       document.getElementById('weekly-balance-val').textContent = `৳ ${weeklyBal.toFixed(2)}`;
-      document.getElementById('stat-weekly-earn').textContent = `৳ ${weeklyBal.toFixed(2)}`;
+      document.getElementById('main-balance-val').textContent = `৳ ${mainBal.toFixed(2)}`;
+
+      document.getElementById('stat-today-earn').textContent = `৳ ${(data.todayEarning || 0).toFixed(2)}`;
+      document.getElementById('stat-lifetime-earn').textContent = `৳ ${(data.totalEarnings || 0).toFixed(2)}`;
+    }
+
+    function updateWeeklyTransferCountdown(lastTransferTime) {
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const nextTransferTime = (lastTransferTime || Date.now()) + sevenDaysMs;
+
+      setInterval(() => {
+        const diff = nextTransferTime - Date.now();
+        if (diff <= 0) {
+          document.getElementById('countdown-timer-txt').textContent = "Transfer Due Now!";
+        } else {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const secs = Math.floor((diff % (1000 * 60)) / 1000);
+          document.getElementById('countdown-timer-txt').textContent = `${days}d ${hours}h ${mins}m ${secs}s`;
+        }
+      }, 1000);
     }
 
     // ==========================================================================
-    // 4. REALTIME USER FEED & ACCEPTANCE ENGINE
+    // 4. REALTIME USER FEED & ASSIGNED USER ENGINE
     // ==========================================================================
     function initRealtimeUserListeners() {
       database.ref('users').on('value', (snapshot) => {
         const allUsers = snapshot.val() || {};
 
         const unassignedList = [];
-        const myAssignedList = [];
+        myAssignedUsersList = [];
+        const weeklyActivationsList = [];
         let completedCount = 0;
 
         Object.keys(allUsers).forEach(key => {
           const u = allUsers[key];
           u.authUid = key;
 
-          // Feed 1: Unassigned Pending Users (acceptedBy is null)
+          // Feed 1: Unassigned Pending Registrations
           if (u.accountStatus === 'pending' && !u.acceptedBy) {
             unassignedList.push(u);
           }
 
           // Feed 2: My Accepted Users
           if (u.acceptedBy === currentUser.uid) {
-            myAssignedList.push(u);
+            myAssignedUsersList.push(u);
 
             if (u.accountStatus === 'active') {
               completedCount++;
+              weeklyActivationsList.push(u);
             }
           }
         });
 
-        document.getElementById('stat-my-assigned').textContent = myAssignedList.length;
-        document.getElementById('stat-completed').textContent = completedCount;
+        document.getElementById('stat-assigned-count').textContent = myAssignedUsersList.length;
+        document.getElementById('stat-completed-count').textContent = completedCount;
 
         renderUnassignedFeed(unassignedList);
-        renderMyAssignedFeed(myAssignedList);
+        renderMyAssignedUsersFeed();
+        renderWeeklyActivationsFeed(weeklyActivationsList);
       });
     }
 
@@ -731,11 +865,11 @@
               <img class="user-avatar" src="${avatar}" alt="Avatar">
               <div style="min-width:0;">
                 <div class="user-title-txt">${escapeHTML(u.name || 'User')}</div>
-                <div class="user-sub-txt">UID: ${u.uid || '------'} | ${regDate}</div>
+                <div class="user-sub-txt">UID: ${u.uid || '------'} | Ref: ${u.referredBy || 'Direct'}</div>
               </div>
             </div>
-            <button class="btn-accept" onclick="acceptUserAssignment('${u.authUid}')">
-              Accept
+            <button class="btn-accept-wa" onclick="acceptUserAssignment('${u.authUid}')">
+              Accept User
             </button>
           </div>
         `;
@@ -743,22 +877,44 @@
       });
     }
 
-    function renderMyAssignedFeed(list) {
+    function renderMyAssignedUsersFeed() {
+      const searchTerm = document.getElementById('assigned-search-input').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('assigned-filter-select').value;
       const container = document.getElementById('my-assigned-users-list');
       container.innerHTML = '';
 
-      if (list.length === 0) {
-        container.innerHTML = `<div class="empty-txt">You haven't accepted any users yet.</div>`;
+      let filtered = [...myAssignedUsersList];
+
+      if (searchTerm) {
+        filtered = filtered.filter(u => 
+          (u.name && u.name.toLowerCase().includes(searchTerm)) ||
+          (u.uid && u.uid.toString().toLowerCase().includes(searchTerm)) ||
+          (u.whatsapp && u.whatsapp.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(u => {
+          if (statusFilter === 'pending') return u.accountStatus === 'pending' && !u.trxId;
+          if (statusFilter === 'submitted') return u.trxId || u.paymentStatus === 'Submitted';
+          if (statusFilter === 'active') return u.accountStatus === 'active';
+          return true;
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-txt">No matching assigned users found.</div>`;
         return;
       }
 
-      list.forEach(u => {
+      filtered.forEach(u => {
         const div = document.createElement('div');
         div.className = 'user-item-card';
 
         const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
         const waNum = (u.whatsapp || '').replace(/[^0-9]/g, '');
-        const isGuided = u.guidedByAdmin === true;
+        const isPaymentSubmitted = u.trxId || u.paymentNumber || u.paymentStatus === 'Submitted';
+        const guideStatusVal = u.guideStatus || 'Not Contacted';
 
         div.innerHTML = `
           <div class="user-card-header">
@@ -766,21 +922,43 @@
               <img class="user-avatar" src="${avatar}" alt="Avatar">
               <div style="min-width:0;">
                 <div class="user-title-txt">${escapeHTML(u.name || 'User')}</div>
-                <div class="user-sub-txt">${escapeHTML(u.whatsapp || 'No WA')}</div>
+                <div class="user-sub-txt">UID: ${u.uid || '------'} | ${escapeHTML(u.whatsapp || 'No WA')}</div>
               </div>
             </div>
-            <span style="font-size:10px; font-weight:800; color:${u.accountStatus === 'active' ? 'var(--primary)' : 'var(--accent-gold)'};">
-              ${(u.accountStatus || 'PENDING').toUpperCase()}
+            <span style="font-size:10px; font-weight:800; color:${u.accountStatus === 'active' ? 'var(--primary)' : (isPaymentSubmitted ? 'var(--accent-gold)' : 'var(--accent-blue)')};">
+              ${u.accountStatus === 'active' ? 'ACTIVE' : (isPaymentSubmitted ? 'PAYMENT SUBMITTED' : 'PENDING')}
             </span>
           </div>
 
-          <div class="action-row-sm">
-            <a href="https://wa.me/${waNum}" target="_blank" class="btn-chat-wa">
-              Chat WhatsApp
-            </a>
-            <button class="btn-guided ${isGuided ? 'completed' : ''}" onclick="toggleGuideStatus('${u.authUid}', ${isGuided})">
-              ${isGuided ? '✓ Guided' : 'Mark Guided'}
-            </button>
+          <!-- Payment Submission Details (If User Submitted Payment) -->
+          ${isPaymentSubmitted ? `
+            <div class="payment-submitted-box">
+              <div style="font-weight:800; margin-bottom:2px;">💰 Payment Details Submitted</div>
+              <div>Trx ID: <strong>${escapeHTML(u.trxId || 'N/A')}</strong> | Number: <strong>${escapeHTML(u.paymentNumber || 'N/A')}</strong></div>
+              <button class="btn-notify-admin" onclick="notifyMainAdminWhatsApp('${u.authUid}')">
+                Notify Main Admin via WhatsApp &rarr;
+              </button>
+            </div>
+          ` : ''}
+
+          <!-- Guide Status Selector Dropdown -->
+          <div>
+            <label style="font-size:9px; color:var(--text-muted); font-weight:700;">GUIDE STATUS:</label>
+            <select class="guide-select" onchange="updateGuideStatus('${u.authUid}', this.value)">
+              <option value="Not Contacted" ${guideStatusVal === 'Not Contacted' ? 'selected' : ''}>Not Contacted</option>
+              <option value="Contacted" ${guideStatusVal === 'Contacted' ? 'selected' : ''}>Contacted</option>
+              <option value="Guided" ${guideStatusVal === 'Guided' ? 'selected' : ''}>Guided</option>
+              <option value="Waiting Payment" ${guideStatusVal === 'Waiting Payment' ? 'selected' : ''}>Waiting Payment</option>
+              <option value="Payment Submitted" ${guideStatusVal === 'Payment Submitted' ? 'selected' : ''}>Payment Submitted</option>
+              <option value="Account Activated" ${guideStatusVal === 'Account Activated' ? 'selected' : ''}>Account Activated</option>
+            </select>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-btn-row">
+            <a href="https://wa.me/${waNum}" target="_blank" class="btn-action-sm btn-wa-green">Open WA</a>
+            <button class="btn-action-sm" onclick="copyNumber('${u.whatsapp}')">Copy Num</button>
+            <button class="btn-action-sm" onclick="openUserModal('${u.authUid}')">Details</button>
           </div>
         `;
         container.appendChild(div);
@@ -788,7 +966,7 @@
     }
 
     // ==========================================================================
-    // 5. ATOMIC USER ACCEPT & LOCKING TRANSACTION
+    // 5. ATOMIC ACCEPT USER TRANSACTION & NOTIFY MAIN ADMIN
     // ==========================================================================
     async function acceptUserAssignment(targetAuthUid) {
       if (!currentUser) return;
@@ -805,28 +983,48 @@
         }
 
         const now = Date.now();
-        await userRef.update({
-          acceptedBy: currentUser.uid,
-          acceptedAt: now
-        });
+        const updates = {};
 
-        showToast("User accepted! Added to My Assigned Users.", "success");
+        updates[`users/${targetAuthUid}/acceptedBy`] = currentUser.uid;
+        updates[`users/${targetAuthUid}/acceptedAt`] = now;
+        updates[`users/${targetAuthUid}/guideStatus`] = 'Contacted';
+
+        // Notify User
+        const notifKey = database.ref(`notifications/${targetAuthUid}`).push().key;
+        updates[`notifications/${targetAuthUid}/${notifKey}`] = {
+          title: "WhatsApp Admin Assigned",
+          message: `Your registration is now being guided by WhatsApp Admin (${currentUserData.name || 'Admin'}).`,
+          timestamp: now
+        };
+
+        await database.ref().update(updates);
+        showToast("User accepted! Moved to My Assigned Users.", "success");
       } catch (err) {
         showToast("Error accepting user: " + err.message, "error");
       }
     }
 
-    async function toggleGuideStatus(targetAuthUid, currentGuidedState) {
+    async function updateGuideStatus(targetAuthUid, newStatusVal) {
       try {
-        await database.ref(`users/${targetAuthUid}/guidedByAdmin`).set(!currentGuidedState);
-        showToast("Guide status updated.", "success");
+        await database.ref(`users/${targetAuthUid}/guideStatus`).set(newStatusVal);
+        showToast(`Guide status updated to '${newStatusVal}'`, "success");
       } catch (err) {
-        showToast("Error: " + err.message, "error");
+        showToast("Error updating status: " + err.message, "error");
       }
     }
 
+    function notifyMainAdminWhatsApp(targetAuthUid) {
+      const u = myAssignedUsersList.find(item => item.authUid === targetAuthUid);
+      if (!u) return;
+
+      const cleanAdminNum = mainAdminSupportWhatsapp.replace(/[^0-9]/g, '');
+      const msg = `Hello Main Admin, User Payment Submitted:\nName: ${u.name}\nUID: ${u.uid}\nPayment Number: ${u.paymentNumber || u.whatsapp}\nTransaction ID: ${u.trxId || 'N/A'}\nAmount: 520 Taka\nPlease verify and activate account.`;
+
+      window.open(`https://wa.me/${cleanAdminNum}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
     // ==========================================================================
-    // 6. AUTO WEEKLY BALANCE TRANSFER (EVERY 7 DAYS)
+    // 6. AUTO WEEKLY TRANSFER & HISTORY
     // ==========================================================================
     async function checkWeeklyAutoTransfer(authUid, adminData) {
       const weeklyBal = adminData.weeklyBalance || 0;
@@ -839,10 +1037,18 @@
       if (now - lastTransfer >= sevenDaysMs) {
         const updates = {};
         const newMainBal = (adminData.balance || 0) + weeklyBal;
+        const transferId = database.ref(`transfer_history/${authUid}`).push().key;
 
         updates[`users/${authUid}/balance`] = newMainBal;
         updates[`users/${authUid}/weeklyBalance`] = 0;
         updates[`users/${authUid}/lastWeeklyTransferTime`] = now;
+
+        updates[`transfer_history/${authUid}/${transferId}`] = {
+          id: transferId,
+          amount: weeklyBal,
+          timestamp: now,
+          status: "Completed"
+        };
 
         const notifKey = database.ref(`notifications/${authUid}`).push().key;
         updates[`notifications/${authUid}/${notifKey}`] = {
@@ -853,23 +1059,101 @@
 
         try {
           await database.ref().update(updates);
-          showToast(`Weekly Transfer Complete: ৳${weeklyBal} added to main balance!`, "success");
+          showToast(`Weekly Transfer Complete: ৳${weeklyBal} added to Main Balance!`, "success");
         } catch (err) {
-          console.error("Weekly transfer error:", err);
+          console.error("Transfer error:", err);
         }
       }
     }
 
+    function renderWeeklyActivationsFeed(list) {
+      const container = document.getElementById('weekly-activations-list');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-txt">No weekly activations recorded yet.</div>`;
+        return;
+      }
+
+      list.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'detail-row';
+        div.innerHTML = `
+          <div>
+            <strong>${escapeHTML(u.name || 'User')}</strong> (UID: ${u.uid || '------'})
+          </div>
+          <span style="color:var(--primary); font-weight:800;">+৳100</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderTransferHistory(dataMap) {
+      const container = document.getElementById('transfer-history-list');
+      container.innerHTML = '';
+
+      const list = Object.keys(dataMap).map(k => dataMap[k]);
+      list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-txt">No weekly transfers recorded yet.</div>`;
+        return;
+      }
+
+      list.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'detail-row';
+        div.innerHTML = `
+          <div>
+            <strong>Transferred to Main Balance</strong>
+            <div style="font-size:9px; color:var(--text-muted);">${new Date(t.timestamp).toLocaleString()}</div>
+          </div>
+          <span style="color:var(--wa-green); font-weight:800;">৳ ${(t.amount || 0).toFixed(2)}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
     // ==========================================================================
-    // 7. HELPER FUNCTIONS
+    // 7. MODALS & HELPER FUNCTIONS
     // ==========================================================================
+    function openUserModal(authUid) {
+      const u = myAssignedUsersList.find(item => item.authUid === authUid);
+      if (!u) return;
+
+      const content = document.getElementById('modal-user-content');
+      content.innerHTML = `
+        <div class="detail-row"><span class="detail-lbl">Full Name:</span><span class="detail-val">${escapeHTML(u.name || 'N/A')}</span></div>
+        <div class="detail-row"><span class="detail-lbl">Numeric UID:</span><span class="detail-val" style="color:var(--accent-gold);">${u.uid || 'N/A'}</span></div>
+        <div class="detail-row"><span class="detail-lbl">WhatsApp:</span><span class="detail-val">${escapeHTML(u.whatsapp || 'N/A')}</span></div>
+        <div class="detail-row"><span class="detail-lbl">Email:</span><span class="detail-val">${escapeHTML(u.email || 'N/A')}</span></div>
+        <div class="detail-row"><span class="detail-lbl">Registration Date:</span><span class="detail-val">${u.createdAt ? new Date(u.createdAt).toLocaleString() : 'N/A'}</span></div>
+        <div class="detail-row"><span class="detail-lbl">Account Status:</span><span class="detail-val" style="color:${u.accountStatus === 'active' ? 'var(--primary)' : 'var(--accent-gold)'};">${(u.accountStatus || 'PENDING').toUpperCase()}</span></div>
+        <div class="detail-row"><span class="detail-lbl">Transaction ID:</span><span class="detail-val" style="color:var(--accent-blue);">${escapeHTML(u.trxId || 'N/A')}</span></div>
+        <div class="detail-row"><span class="detail-lbl">Payment Number:</span><span class="detail-val">${escapeHTML(u.paymentNumber || 'N/A')}</span></div>
+      `;
+
+      document.getElementById('modal-view-user').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function copyNumber(num) {
+      if (!num) return;
+      navigator.clipboard.writeText(num).then(() => {
+        showToast("WhatsApp number copied!", "success");
+      });
+    }
+
     function showToast(message, type = 'success') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
 
       const iconSvg = type === 'success' 
-        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--wa-green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
         : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
 
       toast.innerHTML = `${iconSvg} <span>${message}</span>`;
