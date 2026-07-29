@@ -24,7 +24,7 @@
       --card-border: rgba(255, 255, 255, 0.08);
       --primary: #10b981;
       --primary-hover: #059669;
-      --primary-glow: rgba(16, 185, 129, 0.2);
+      --primary-glow: rgba(16, 185, 129, 0.25);
       --accent-gold: #f59e0b;
       --accent-blue: #3b82f6;
       --accent-purple: #8b5cf6;
@@ -142,9 +142,7 @@
       animation: spin 0.8s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Main Container */
     .app-container {
@@ -163,9 +161,7 @@
       color: var(--text-main);
     }
 
-    .section-head svg {
-      stroke: var(--accent-purple);
-    }
+    .section-head svg { stroke: var(--accent-purple); }
 
     /* ==========================================================================
        2. HEADER BANNER
@@ -239,7 +235,6 @@
       padding: 12px;
       border-radius: var(--radius-md);
       border: 1px solid rgba(255, 255, 255, 0.05);
-      margin-bottom: 16px;
     }
 
     .auto-field-lbl {
@@ -259,7 +254,76 @@
     }
 
     /* ==========================================================================
-       4. CATEGORY SELECTION CARDS
+       4. PREMIUM "GO TO SUB ADMIN PANEL" BUTTON CARD
+       ========================================================================== */
+    .btn-panel-gradient {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.95) 100%);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      text-decoration: none;
+      color: white;
+      box-shadow: 0 8px 25px var(--primary-glow);
+      transition: var(--transition);
+      margin-top: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-panel-gradient:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .btn-panel-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-panel-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .btn-panel-title {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .btn-panel-sub {
+      font-size: 10px;
+      opacity: 0.85;
+      font-weight: 600;
+    }
+
+    .arrow-box {
+      font-size: 18px;
+      font-weight: 800;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-panel-gradient:hover .arrow-box {
+      transform: translateX(4px);
+    }
+
+    /* ==========================================================================
+       5. CATEGORY SELECTION CARDS
        ========================================================================== */
     .category-radio-grid {
       display: flex;
@@ -331,9 +395,7 @@
     .status-tag-sm.available { background: rgba(16, 185, 129, 0.15); color: var(--primary); }
     .status-tag-sm.unavailable { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
 
-    /* ==========================================================================
-       5. APPLICATION TEXTAREA & CHAR COUNTER
-       ========================================================================== */
+    /* Textarea */
     .essay-wrapper {
       position: relative;
       margin-bottom: 16px;
@@ -393,9 +455,7 @@
       border: 1px solid var(--card-border);
     }
 
-    /* ==========================================================================
-       6. APPLICATION STATUS & CURRENT POSITION CARD
-       ========================================================================== */
+    /* Application Status Card */
     .status-card-block {
       background: rgba(10, 15, 26, 0.5);
       border: 1px solid var(--card-border);
@@ -412,9 +472,7 @@
       font-size: 12px;
     }
 
-    .status-row-item:last-child {
-      border-bottom: none;
-    }
+    .status-row-item:last-child { border-bottom: none; }
 
     .badge-status-app {
       font-size: 10px;
@@ -428,9 +486,7 @@
     .badge-status-app.approved { background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3); }
     .badge-status-app.rejected { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
 
-    /* ==========================================================================
-       7. CONFIRMATION MODAL
-       ========================================================================== */
+    /* Modal Style */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -446,10 +502,7 @@
       padding: 16px;
     }
 
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: all;
-    }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
 
     .modal-card {
       background: rgba(22, 30, 49, 0.98);
@@ -461,9 +514,7 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
     }
 
-    /* ==========================================================================
-       8. RULES & POLICY CARD
-       ========================================================================== */
+    /* Policy Rules */
     .rule-item {
       display: flex;
       justify-content: space-between;
@@ -479,9 +530,7 @@
     .rule-key { color: var(--text-muted); font-weight: 600; }
     .rule-val { font-weight: 700; color: var(--text-main); }
 
-    /* ==========================================================================
-       9. FIXED BOTTOM NAVIGATION BAR
-       ========================================================================== */
+    /* Fixed Bottom Navigation */
     .bottom-nav-fixed {
       position: fixed;
       bottom: 0;
@@ -510,26 +559,10 @@
       height: 100%;
     }
 
-    .nav-tab svg {
-      width: 22px;
-      height: 22px;
-      stroke: var(--text-muted);
-      transition: var(--transition);
-    }
-
-    .nav-label {
-      font-size: 11px;
-      font-weight: 600;
-      line-height: 1;
-    }
-
-    .nav-tab.active {
-      color: var(--primary);
-    }
-
-    .nav-tab.active svg {
-      stroke: var(--primary);
-    }
+    .nav-tab svg { width: 22px; height: 22px; stroke: var(--text-muted); transition: var(--transition); }
+    .nav-label { font-size: 11px; font-weight: 600; line-height: 1; }
+    .nav-tab.active { color: var(--primary); }
+    .nav-tab.active svg { stroke: var(--primary); }
   </style>
 </head>
 <body>
@@ -588,14 +621,14 @@
       </div>
     </div>
 
-    <!-- CURRENT SUB ADMIN POSITION (IF APPROVED ALREADY) -->
+    <!-- CURRENT SUB ADMIN ROLE CARD + GO TO DASHBOARD BUTTON -->
     <div id="current-position-block" class="card-block" style="display:none;">
       <div class="section-head">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Current Sub Admin Role
       </div>
 
-      <div class="status-card-block" style="background:rgba(16, 185, 129, 0.1); border-color:var(--primary);">
+      <div class="status-card-block" style="background:rgba(16, 185, 129, 0.1); border-color:var(--primary); margin-bottom:12px;">
         <div class="status-row-item">
           <span style="color:var(--text-muted);">Current Position:</span>
           <span id="current-role-title" style="font-weight:800; color:var(--primary);">WhatsApp Admin</span>
@@ -605,6 +638,22 @@
           <span class="badge-status-app approved">ACTIVE LEADERSHIP</span>
         </div>
       </div>
+
+      <!-- LARGE PREMIUM "GO TO SUB ADMIN PANEL" BUTTON -->
+      <a id="btn-go-subadmin-panel" href="#" onclick="navigateToSubAdminPanel(event)" class="btn-panel-gradient">
+        <div class="btn-panel-content">
+          <div class="btn-panel-left">
+            <div class="panel-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div>
+              <div id="panel-btn-title" class="btn-panel-title">Open WhatsApp Admin Dashboard</div>
+              <div class="btn-panel-sub">Access your leadership management suite</div>
+            </div>
+          </div>
+          <div class="arrow-box">&rarr;</div>
+        </div>
+      </a>
     </div>
 
     <!-- APPLICATION STATUS (IF PENDING / REJECTED) -->
@@ -628,13 +677,16 @@
           <span id="app-status-date">Recent</span>
         </div>
       </div>
+      <div id="pending-review-msg" style="font-size:11px; color:var(--accent-gold); font-weight:700; text-align:center; margin-top:6px; display:none;">
+        Your application is under review.
+      </div>
     </div>
 
-    <!-- APPLICATION FORM BLOCK -->
+    <!-- APPLICATION FORM BLOCK (POSITION UPDATE / FIRST APPLY) -->
     <div class="card-block">
       <div class="section-head">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span id="form-section-title">Select Leadership Category</span>
+        <span id="form-section-title">Apply For Position Update</span>
       </div>
 
       <!-- CATEGORY SELECTION CARDS -->
@@ -886,11 +938,17 @@
       const currentPosBlock = document.getElementById('current-position-block');
       const statusBlock = document.getElementById('app-status-block');
       const submitBtn = document.getElementById('btn-submit-application');
+      const pendingMsg = document.getElementById('pending-review-msg');
 
+      // Rule A: Check if User is ALREADY an approved Sub Admin
       if (currentUserData && currentUserData.isSubAdmin) {
         currentPosBlock.style.display = 'block';
-        document.getElementById('current-role-title').textContent = currentUserData.subAdminRole || 'Sub Admin';
+        const roleName = currentUserData.subAdminRole || 'WhatsApp Admin';
+        document.getElementById('current-role-title').textContent = roleName;
         document.getElementById('form-section-title').textContent = "Apply For Position Update";
+
+        // Dynamic Title for "Go To Sub Admin Panel" Button
+        document.getElementById('panel-btn-title').textContent = `Open ${roleName} Dashboard`;
 
         // Position Lock Rule: 14 Days after approval
         if (currentUserData.roleApprovedAt) {
@@ -906,6 +964,7 @@
         currentPosBlock.style.display = 'none';
       }
 
+      // Rule B: Check Application Status (Pending / Rejected)
       if (existingApplication) {
         statusBlock.style.display = 'block';
         document.getElementById('app-status-cat').textContent = existingApplication.category;
@@ -918,8 +977,11 @@
 
         if (existingApplication.status === 'Pending') {
           submitBtn.disabled = true;
-          showToast("You have a Pending application under review.", "warning");
+          pendingMsg.style.display = 'block';
+          showToast("Your application is under review.", "warning");
           return;
+        } else {
+          pendingMsg.style.display = 'none';
         }
 
         // Rejection Cooldown Rule: 48 Hours
@@ -942,7 +1004,27 @@
     }
 
     // ==========================================================================
-    // 4. CATEGORY SELECTION & AVAILABILITY ENGINE
+    // 4. SUB ADMIN PANEL ROUTING LOGIC
+    // ==========================================================================
+    function navigateToSubAdminPanel(e) {
+      e.preventDefault();
+      if (!currentUserData || !currentUserData.isSubAdmin) return;
+
+      const role = (currentUserData.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+
+      if (role === 'whatsapp_admin' || currentUserData.subAdminRole === 'WhatsApp Admin') {
+        window.location.href = 'sub_admin_whatsapp_home.html';
+      } else if (role === 'team_leader' || currentUserData.subAdminRole === 'Team Leader') {
+        window.location.href = 'sub_admin_team_leader_home.html';
+      } else if (role === 'class_leader' || currentUserData.subAdminRole === 'Class Leader') {
+        window.location.href = 'sub_admin_class_leader_home.html';
+      } else {
+        window.location.href = 'sub_admin_whatsapp_home.html';
+      }
+    }
+
+    // ==========================================================================
+    // 5. CATEGORY SELECTION & AVAILABILITY ENGINE
     // ==========================================================================
     function updateCategoryUI() {
       updateCategoryCard('cat-card-whatsapp', 'tag-whatsapp', 'WhatsApp Admin');
@@ -984,7 +1066,7 @@
     }
 
     // ==========================================================================
-    // 5. APPLICATION SUBMISSION HANDLER
+    // 6. APPLICATION SUBMISSION HANDLER
     // ==========================================================================
     function openConfirmationModal() {
       if (!isEligibleByReferral) {
@@ -1054,7 +1136,7 @@
     }
 
     // ==========================================================================
-    // 6. HELPER FUNCTIONS
+    // 7. HELPER FUNCTIONS
     // ==========================================================================
     function closeModal(modalId) {
       document.getElementById(modalId).classList.remove('active');
